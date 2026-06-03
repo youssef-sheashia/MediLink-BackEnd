@@ -9,12 +9,7 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
-Mongoose.connect(process.env.LOCAL_DATABASE, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false,
-  useCreateIndex: true,
-}).then(() => {
+Mongoose.connect(process.env.LOCAL_DATABASE).then(() => {
   console.log("db connect successfully");
 
   startServer();

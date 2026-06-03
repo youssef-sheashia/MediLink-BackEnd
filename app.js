@@ -5,7 +5,7 @@ import morgan, { format } from "morgan";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import ExpressMongoSanitize from "express-mongo-sanitize";
-import xss from "xss-clean";
+import { xss } from "express-xss-sanitizer";
 import AppError from "./utils/appError.js";
 import { globalError } from "./controllers/globalErrorHandeler.js";
 import cors from "cors";
