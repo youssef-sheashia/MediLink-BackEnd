@@ -1,21 +1,21 @@
-import { AppError } from '../utils/appError.js';
-import { catchAsync } from '../utils/catchAsync.js';
-import { APIFeatures } from '../utils/apiFeatures.js';
+import AppError from "../utils/appError.js";
+import catchAsync from "../utils/catchAsync.js";
+import { APIFeatures } from "../utils/apiFeatures.js";
 export const deleteOne = (Model) =>
   catchAsync(async function (req, res, next) {
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) {
-      return next(new AppError('document not found', 404));
+      return next(new AppError("document not found", 404));
     }
     res.status(204).json({
-      status: 'succes',
+      status: "succes",
     });
   });
 export const createOne = (Model) =>
   catchAsync(async function (req, res, next) {
-    const doc = await model.create(req.body);
+    const doc = await Model.create(req.body);
     res.status(201).json({
-      status: 'succes',
+      status: "succes",
       data: {
         data: doc,
       },
@@ -28,10 +28,10 @@ export const updateOne = (Model) =>
       runValidators: true,
     });
     if (!doc) {
-      return next(new AppError('document not found', 404));
+      return next(new AppError("document not found", 404));
     }
     res.status(200).json({
-      status: 'succes',
+      status: "succes",
       data: doc,
     });
   });
@@ -42,10 +42,10 @@ export const getOne = (Model, popOption) =>
     const doc = await query;
 
     if (!doc) {
-      return next(new AppError('doc not found', 404));
+      return next(new AppError("doc not found", 404));
     }
     res.status(200).json({
-      status: 'succes',
+      status: "succes",
       data: doc,
     });
   });
@@ -63,7 +63,7 @@ export const getAll = (Model) =>
 
     // SEND RESPONSE
     res.status(200).json({
-      status: 'success',
+      status: "success",
       results: doc.length,
       data: {
         doc,

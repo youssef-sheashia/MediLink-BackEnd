@@ -111,3 +111,177 @@ export const verifyOTP_Schema = z.object({
     })
     .min(1, "otp is required"),
 });
+
+////////////////////////////////////////////////////////////////////////
+// validators/doctorValidator.js
+
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/; // HH:MM 24-hour format
+
+export const createDoctorSchema = z
+  .object({
+    // ─── User fields ────────────────────────────────────────────────────────────
+    firstName: z
+      .string({ required_error: "first name is required" })
+      .min(2, "first name must be at least 2 characters")
+      .max(50, "first name must be at most 50 characters")
+      .trim(),
+
+    lastName: z
+      .string({ required_error: "last name is required" })
+      .min(2, "last name must be at least 2 characters")
+      .max(50, "last name must be at most 50 characters")
+      .trim(),
+
+    phone: z
+      .string({ required_error: "phone is required" })
+      .regex(
+        /^01[0125][0-9]{8}$/,
+        "phone must be a valid Egyptian number (e.g. 01012345678)",
+      ),
+
+    password: z
+      .string({ required_error: "password is required" })
+      .min(8, "password must be at least 8 characters")
+      .regex(/[A-Z]/, "password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "password must contain at least one number"),
+
+    confirmPassword: z.string({
+      required_error: "confirm password is required",
+    }),
+
+    gender: z.enum(["male", "female"], {
+      required_error: "gender is required",
+      invalid_type_error: "gender must be male or female",
+    }),
+
+    birthDate: z
+      .string({ required_error: "birth date is required" })
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "birthDate must be a valid date",
+      )
+      .refine(
+        (val) => new Date(val) < new Date(),
+        "birthDate must be in the past",
+      ),
+
+    // ─── DoctorProfile fields ────────────────────────────────────────────────────
+    specialization: z
+      .string({ required_error: "specialization is required" })
+      .min(2, "specialization must be at least 2 characters")
+      .max(100, "specialization must be at most 100 characters")
+      .trim(),
+
+    experienceYears: z
+      .number({
+        required_error: "experience years is required",
+        invalid_type_error: "experience years must be a number",
+      })
+      .int("experience years must be a whole number")
+      .min(0, "experience years cannot be negative")
+      .max(60, "experience years seems too high"),
+
+    workingDays: z
+      .array(
+        z.enum(
+          [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday",
+          ],
+          {
+            invalid_type_error: "each working day must be a valid day name",
+          },
+        ),
+      )
+      .min(1, "at least one working day is required")
+      .max(7, "working days cannot exceed 7"),
+
+    startTime: z
+      .string({ required_error: "start time is required" })
+      .regex(timeRegex, "start time must be in HH:MM format (e.g. 09:00)"),
+
+    endTime: z
+      .string({ required_error: "end time is required" })
+      .regex(timeRegex, "end time must be in HH:MM format (e.g. 17:00)"),
+  })
+  // ─── Cross-field validations ───────────────────────────────────────────────────
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine(
+    (data) => {
+      const [startH, startM] = data.startTime.split(":").map(Number);
+      const [endH, endM] = data.endTime.split(":").map(Number);
+      return endH * 60 + endM > startH * 60 + startM;
+    },
+    { message: "end time must be after start time", path: ["endTime"] },
+  );
+
+export const updateDoctorSchema = z
+  .object({
+    // ─── User fields ──────────────────────────────────────────────────────────
+    firstName: z.string().min(2).max(50).trim().optional(),
+    lastName: z.string().min(2).max(50).trim().optional(),
+    phone: z
+      .string()
+      .regex(/^01[0125][0-9]{8}$/, "phone must be a valid Egyptian number")
+      .optional(),
+    gender: z.enum(["male", "female"]).optional(),
+    birthDate: z
+      .string()
+      .refine(
+        (val) => !isNaN(Date.parse(val)),
+        "birthDate must be a valid date",
+      )
+      .refine(
+        (val) => new Date(val) < new Date(),
+        "birthDate must be in the past",
+      )
+      .optional(),
+
+    // ─── Profile fields ───────────────────────────────────────────────────────
+    specialization: z.string().min(2).max(100).trim().optional(),
+
+    experienceYears: z.number().int().min(0).max(60).optional(),
+    workingDays: z
+      .array(
+        z.enum([
+          "monday",
+          "tuesday",
+          "wednesday",
+          "thursday",
+          "friday",
+          "saturday",
+          "sunday",
+        ]),
+      )
+      .min(1)
+      .max(7)
+      .optional(),
+    startTime: z
+      .string()
+      .regex(timeRegex, "start time must be in HH:MM format")
+      .optional(),
+    endTime: z
+      .string()
+      .regex(timeRegex, "end time must be in HH:MM format")
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.startTime && data.endTime) {
+        const [startH, startM] = data.startTime.split(":").map(Number);
+        const [endH, endM] = data.endTime.split(":").map(Number);
+        return endH * 60 + endM > startH * 60 + startM;
+      }
+      return true; // skip if one or both are not provided
+    },
+    { message: "end time must be after start time", path: ["endTime"] },
+  );

@@ -14,11 +14,6 @@ const doctorProfileSchema = new mongoose.Schema(
       required: true,
     },
 
-    fees: {
-      type: Number,
-      required: true,
-    },
-
     experienceYears: {
       type: Number,
       default: 0,
@@ -41,11 +36,6 @@ const doctorProfileSchema = new mongoose.Schema(
 
     startTime: String,
     endTime: String,
-
-    averageVisitDuration: {
-      type: Number,
-      default: 15,
-    },
   },
   {
     timestamps: true,

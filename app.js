@@ -10,6 +10,7 @@ import AppError from "./utils/appError.js";
 import { globalError } from "./controllers/globalErrorHandeler.js";
 import cors from "cors";
 import userRouter from "./routes/userRoutes.js";
+import doctorRouter from "./routes/doctorRoutes.js";
 
 export const app = express();
 app.use(helmet());
@@ -37,6 +38,7 @@ if (process.env.NODE_ENV === "development") {
 app.use(express.static("./public"));
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/doctors", doctorRouter);
 
 /////handel invalid routes and must be after all midlleware
 

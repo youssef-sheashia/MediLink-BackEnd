@@ -58,6 +58,7 @@ const userSchema = new Mongoose.Schema({
   active: {
     type: Boolean,
     default: true,
+    select: false,
   },
 });
 userSchema.virtual("isPreHashed").set(function (val) {
@@ -72,11 +73,9 @@ userSchema.pre("save", async function () {
 //   this.passwordChangedAt = Date.now() - 1000;
 //   next();
 // });
-// userSchema.pre(/^find/, function (next) { // when i make signup this middleware return error for next
-//   this.find({ active: { $ne: false } });
-//   console.log(this);
-//   next();
-// });
+userSchema.pre("find", function () {
+  this.find({ role: { $ne: "admin" } });
+});
 userSchema.methods.correctPassword = async (
   candidatePassword,
   userpassword,
