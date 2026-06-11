@@ -6,6 +6,7 @@ import {
   verifyForgetPassword,
   resetPassword,
   restrictTo,
+  updatePassword,
 } from "../controllers/authController.js";
 import { validate } from "../middlewares/validate.js";
 import authenticate from "../middlewares/authenticate.js";
@@ -13,12 +14,14 @@ import {
   signUpSchema,
   loginSchema,
   verifyOTP_Schema,
+  updatePasswordSchema,
 } from "../utils/validators.js";
 import {
   getAllUsers,
   getOneUser,
   deleteUser,
-  updateUser,
+  getMyProfile,
+  updateMe,
 } from "../controllers/userController.js";
 
 import express from "express";
@@ -29,7 +32,19 @@ userRouter.post("/login", validate(loginSchema), login);
 userRouter.post("/forgetPassword", forgetpassword);
 userRouter.post("/verifyPasswordOTP", verifyForgetPassword);
 userRouter.patch("/resetPassword", resetPassword);
-userRouter.use(authenticate, restrictTo("admin"));
+
+/////////////////////////////////
+userRouter.use(authenticate);
+userRouter.get("/me", getMyProfile);
+userRouter.patch("/updateMe", updateMe);
+userRouter.patch(
+  "/updatePassword",
+  validate(updatePasswordSchema),
+  updatePassword,
+);
+
+////////////////////////////////////////////////
+userRouter.use(restrictTo("admin"));
 userRouter.get("/", getAllUsers);
 userRouter.delete("/:id", deleteUser);
 

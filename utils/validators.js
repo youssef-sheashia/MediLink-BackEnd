@@ -285,3 +285,26 @@ export const updateDoctorSchema = z
     },
     { message: "end time must be after start time", path: ["endTime"] },
   );
+export const updatePasswordSchema = z
+  .object({
+    password: z
+      .string({ required_error: "password is required" })
+      .min(8, "password must be at least 8 characters"),
+    newpassword: z
+      .string({
+        required_error: "password is required",
+        invalid_type_error: "password must be a string",
+      })
+      .min(8, "password must be at least 8 characters")
+      .regex(/[A-Z]/, "password must contain at least one uppercase letter")
+      .regex(/[0-9]/, "password must contain at least one number"),
+
+    confirmnewpassword: z.string({
+      required_error: "please confirm your password",
+      invalid_type_error: "password must be a string",
+    }),
+  })
+  .refine((data) => data.newpassword === data.confirmnewpassword, {
+    message: "passwords do not match",
+    path: ["confirmpassword"],
+  });

@@ -198,67 +198,27 @@ export const getDoctor = catchAsync(async (req, res, next) => {
  * Admin — can update both profile fields and the linked user fields.
  */
 export const updateDoctor = catchAsync(async (req, res, next) => {
-  const {
-    // User fields
-    firstName,
-    lastName,
-    phone,
-    gender,
-    birthDate,
-    // Profile fields — everything else
-    user: _,
-    ...profileUpdates
-  } = req.body;
+  delete req.body.user;
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const updatedDoctor = await DoctorProfile.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    {
+      new: true,
+      runValidators: true,
+    },
+  );
 
-  try {
-    const profile = await DoctorProfile.findById(req.params.id).session(
-      session,
-    );
-    if (!profile) {
-      await session.abortTransaction();
-      session.endSession();
-      return next(new AppError("doctor not found", 404));
-    }
-
-    // Update user fields if provided
-    const userUpdates = {};
-    if (firstName) userUpdates.firstName = firstName;
-    if (lastName) userUpdates.lastName = lastName;
-    if (phone) userUpdates.phone = phone;
-    if (gender) userUpdates.gender = gender;
-    if (birthDate) userUpdates.birthDate = birthDate;
-
-    const updatedUser = await User.findByIdAndUpdate(
-      profile.user,
-      userUpdates,
-      { new: true, runValidators: true, session },
-    ).select("firstName lastName phone photo gender birthDate");
-
-    // Update profile fields
-    const updatedProfile = await DoctorProfile.findByIdAndUpdate(
-      req.params.id,
-      profileUpdates,
-      { new: true, runValidators: true, session },
-    );
-
-    await session.commitTransaction();
-    session.endSession();
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        user: updatedUser,
-        profile: updatedProfile,
-      },
-    });
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    return next(err);
+  if (!updatedDoctor) {
+    return next(new AppError("Doctor not found", 404));
   }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      doctor: updatedDoctor,
+    },
+  });
 });
 
 // ─── Admin: Delete doctor ─────────────────────────────────────────────────────
@@ -268,73 +228,48 @@ export const updateDoctor = catchAsync(async (req, res, next) => {
  * Admin — soft delete: deactivate the user and demote role back to patient.
  * Never hard-delete — medical records must stay intact.
  */
+
 export const deleteDoctor = catchAsync(async (req, res, next) => {
-  const profile = await DoctorProfile.findById(req.params.id);
-  if (!profile) return next(new AppError("doctor not found", 404));
+  const session = await mongoose.startSession();
 
-  await User.findByIdAndUpdate(profile.user, {
-    active: false,
-    role: "patient",
-  });
+  try {
+    session.startTransaction();
 
-  res.status(204).json({ status: "success" });
+    const profile = await DoctorProfile.findByIdAndDelete(req.params.id, {
+      session,
+    });
+
+    if (!profile) {
+      await session.abortTransaction();
+      session.endSession();
+      return next(new AppError("Doctor not found", 404));
+    }
+
+    await User.findByIdAndUpdate(
+      profile.user,
+      {
+        active: false,
+        role: "patient",
+      },
+      {
+        session,
+        runValidators: true,
+      },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(204).json({
+      status: "success",
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    next(err);
+  }
 });
 
-// ─── Doctor: get own profile ──────────────────────────────────────────────────
-
-/**
- * GET /api/v1/doctors/me
- * Doctor only — returns their own profile using req.user set by authenticate.
- */
-export const getMyProfile = catchAsync(async (req, res, next) => {
-  const doctor = await DoctorProfile.findOne({ user: req.user._id }).populate({
-    path: "user",
-    select: "firstName lastName phone photo gender birthDate",
-  });
-
-  if (!doctor)
-    return next(new AppError("profile not found, contact admin", 404));
-
-  res.status(200).json({
-    status: "success",
-    data: { doctor },
-  });
-});
-
-// ─── Doctor: update own profile ───────────────────────────────────────────────
-
-/**
- * PATCH /api/v1/doctors/me
- * Doctor only — can update schedule fields only, not fees (admin-controlled).
- */
-export const updateMyProfile = catchAsync(async (req, res, next) => {
-  // Doctors cannot change user ref or fees — those are admin-controlled
-  const { user: _, ...allowedUpdates } = req.body;
-
-  const doctor = await DoctorProfile.findOneAndUpdate(
-    { user: req.user._id },
-    allowedUpdates,
-    { new: true, runValidators: true },
-  ).populate({
-    path: "user",
-    select: "firstName lastName phone photo gender birthDate",
-  });
-
-  if (!doctor)
-    return next(new AppError("profile not found, contact admin", 404));
-
-  res.status(200).json({
-    status: "success",
-    data: { doctor },
-  });
-});
-
-// ─── Admin: Search user by phone ──────────────────────────────────────────────
-
-/**
- * GET /api/v1/users/search?phone=01XXXXXXXXX
- * Admin only — look up a registered user by phone.
- */
 export const searchUserByPhone = catchAsync(async (req, res, next) => {
   const { phone } = req.query;
   if (!phone) return next(new AppError("phone query param is required", 400));

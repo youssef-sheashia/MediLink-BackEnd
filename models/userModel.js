@@ -68,11 +68,10 @@ userSchema.pre("save", async function () {
   if (!this.isModified("password") || this._isPreHashed) return;
   this.password = await bcrypt.hash(this.password, 12);
 });
-// userSchema.pre("save", function (next) {
-//   if (!this.isModified("password") || this.isNew) return next();
-//   this.passwordChangedAt = Date.now() - 1000;
-//   next();
-// });
+userSchema.pre("save", function () {
+  if (!this.isModified("password") || this.isNew) return;
+  this.passwordChangedAt = Date.now() - 1000;
+});
 userSchema.pre("find", function () {
   this.find({ role: { $ne: "admin" } });
 });
@@ -92,14 +91,14 @@ userSchema.methods.changedPasswordAfter = function (tokenDate) {
   }
   return false;
 };
-userSchema.methods.createPasswordResetToken = function () {
-  const resetToken = crypto.randomBytes(32).toString("hex");
-  this.passwordResetToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
-  return resetToken;
-};
+// userSchema.methods.createPasswordResetToken = function () {
+//   const resetToken = crypto.randomBytes(32).toString("hex");
+//   this.passwordResetToken = crypto
+//     .createHash("sha256")
+//     .update(resetToken)
+//     .digest("hex");
+//   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+//   return resetToken;
+// };
 const User = Mongoose.model("User", userSchema);
 export default User;

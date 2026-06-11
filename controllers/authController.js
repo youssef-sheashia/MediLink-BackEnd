@@ -238,10 +238,22 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   }
 
   user.password = password;
-  await user.validate(["password"]); // validate only password
+  await user.validate(["password"]);
   await user.save({ validateBeforeSave: false });
 
   await client.del(`forgetPassword:${phone}`);
 
   createSendToken(user, 200, res);
+});
+
+export const updatePassword = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id).select("+password");
+  if (!user || !(await user.correctPassword(req.body.password, user.password)))
+    return next(new AppError("the password or email is not correct ", 401));
+  user.password = req.body.newpassword;
+  await user.save();
+  res.status(200).json({
+    status: "success",
+    message: "password change successfuly",
+  });
 });
