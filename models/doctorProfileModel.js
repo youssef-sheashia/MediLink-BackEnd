@@ -10,13 +10,9 @@ const doctorProfileSchema = new mongoose.Schema(
     },
 
     specialization: {
-      type: String,
-      required: true,
-    },
-
-    fees: {
-      type: Number,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Specialization",
+      default: null,
     },
 
     experienceYears: {
@@ -41,11 +37,6 @@ const doctorProfileSchema = new mongoose.Schema(
 
     startTime: String,
     endTime: String,
-
-    averageVisitDuration: {
-      type: Number,
-      default: 15,
-    },
   },
   {
     timestamps: true,
