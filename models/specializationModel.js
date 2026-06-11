@@ -16,7 +16,7 @@ const specializationSchema = new mongoose.Schema(
       min: [0, "fee cannot be negative"],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const Specialization = mongoose.model("Specialization", specializationSchema);

@@ -115,7 +115,7 @@ export const verifyOTP_Schema = z.object({
 ////////////////////////////////////////////////////////////////////////
 // validators/doctorValidator.js
 
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/; 
+const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export const createDoctorSchema = z
   .object({
@@ -317,8 +317,6 @@ export const ClinicInformationsSchema = z.object({
     .trim(),
 });
 
-const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
 const workingDaySchema = z
   .object({
     day: z.enum(
@@ -390,7 +388,10 @@ export const specializationSchema = z.object({
     .max(100)
     .trim(),
   consultationFee: z
-    .number({ required_error: "consultation fee is required", invalid_type_error: "fee must be a number" })
+    .number({
+      required_error: "consultation fee is required",
+      invalid_type_error: "fee must be a number",
+    })
     .min(0, "fee cannot be negative"),
 });
 
