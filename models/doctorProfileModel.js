@@ -46,6 +46,8 @@ doctorProfileSchema.pre(/^find/, function () {
   this.populate({
     path: `user`,
     select: "-__v -passwordChangedAt -passwordResetExpires -passwordResetToken",
+  }).populate({
+    path: "specialization",
   });
 });
 const DoctorProfile = mongoose.model("DoctorProfile", doctorProfileSchema);
