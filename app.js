@@ -15,6 +15,7 @@ import clinicRouter from "./routes/clinicRoute.js";
 import specializationRouter from "./routes/specializationRoute.js";
 import receptionistRouter from "./routes/receptionistRoute.js";
 import patientRouter from "./routes/patientRoute.js";
+import appointmentRouter from "./routes/appointmentRoute.js";
 export const app = express();
 app.use(helmet());
 app.use(cors());
@@ -46,6 +47,7 @@ app.use("/api/v1/clinic", clinicRouter);
 app.use("/api/v1/specializations", specializationRouter);
 app.use("/api/v1/receptionist", receptionistRouter);
 app.use("/api/v1/patient", patientRouter);
+app.use("/api/v1/appointment", appointmentRouter);
 /////handel invalid routes and must be after all midlleware
 
 app.use((req, res, next) => {
