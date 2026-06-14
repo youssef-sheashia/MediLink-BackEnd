@@ -14,3 +14,17 @@ export const validate = (schema) => (req, res, next) => {
   req.body = result.data;
   next();
 };
+export const validateQuery = (schema) => (req, res, next) => {
+  const result = schema.safeParse(req.query ?? {});
+  if (!result.success) {
+    const messages = result.error.issues
+      .map((issue) => {
+        const field = issue.path.join(".");
+        return field ? `${field}: ${issue.message}` : issue.message;
+      })
+      .join(", ");
+    return next(new AppError(messages, 400));
+  }
+  req.query = result.data;
+  next();
+};

@@ -520,3 +520,92 @@ export const createreceptionistSchema = z
     },
     { message: "end time must be after start time", path: ["endTime"] },
   );
+
+///////////////////////////////////////////////////////////////////////////////////////
+const dateString = z
+  .string()
+  .refine(
+    (val) => !isNaN(Date.parse(val)),
+    "must be a valid date (YYYY-MM-DD)"//"2026-04-13"
+  );
+
+export const appointmentQuerySchema = z
+  .object({
+    date: dateString.optional(),
+    startDate: dateString.optional(),
+    endDate:   dateString.optional(),
+    month: z.coerce 
+      .number({ invalid_type_error: "month must be a number" })
+      .int()
+      .min(1, "month must be between 1 and 12")
+      .max(12, "month must be between 1 and 12")
+      .optional(),
+
+    year: z.coerce
+      .number({ invalid_type_error: "year must be a number" })
+      .int()
+      .min(2000, "year seems too old")
+      .max(2100, "year seems too far in future")
+      .optional(),
+  })
+  // rule 1 — week view: startDate and endDate must come together
+  .refine(
+    (data) => {
+      const hasStart = data.startDate !== undefined;
+      const hasEnd   = data.endDate   !== undefined;
+      return hasStart === hasEnd; // both or neither
+    },
+    { message: "startDate and endDate must both be provided together" }
+  )
+  // rule 2 — week view: endDate must be after startDate
+  .refine(
+    (data) => {
+      if (data.startDate && data.endDate) {
+        return new Date(data.endDate) > new Date(data.startDate);
+      }
+      return true;
+    },
+    { message: "endDate must be after startDate", path: ["endDate"] }
+  )
+  // rule 3 — week view: max 7 days range
+  .refine(
+    (data) => {
+      if (data.startDate && data.endDate) {
+        const diff =
+          (new Date(data.endDate) - new Date(data.startDate)) /
+          (1000 * 60 * 60 * 24);
+        return diff <= 7;
+      }
+      return true;
+    },
+    { message: "week range cannot exceed 7 days", path: ["endDate"] }
+  )
+  // rule 4 — month view: month and year must come together
+  .refine(
+    (data) => {
+      const hasMonth = data.month !== undefined;
+      const hasYear  = data.year  !== undefined;
+      return hasMonth === hasYear; // both or neither
+    },
+    { message: "month and year must both be provided together" }
+  )
+  // rule 5 — must provide at least one view type
+  .refine(
+    (data) => {
+      const isDay   = data.date      !== undefined;
+      const isWeek  = data.startDate !== undefined;
+      const isMonth = data.month     !== undefined;
+      return isDay || isWeek || isMonth;
+    },
+    { message: "provide date (day), startDate+endDate (week), or month+year (month)" }
+  )
+  // rule 6 — can't mix view types
+  .refine(
+    (data) => {
+      const isDay   = data.date      !== undefined ? 1 : 0;
+      const isWeek  = data.startDate !== undefined ? 1 : 0;
+      const isMonth = data.month     !== undefined ? 1 : 0;
+      return isDay + isWeek + isMonth === 1; // exactly one view
+    },
+    { message: "provide only one view type at a time: day, week, or month" }
+  );
