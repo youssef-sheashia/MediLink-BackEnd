@@ -30,7 +30,9 @@ export const createPrescriptionSchema = z.object({
   patient: z
     .string({ required_error: "patient id is required" })
     .regex(/^[a-f\d]{24}$/i, "invalid patient id"),
-
+  doctor: z 
+    .string({ required_error: "doctor id is required" })
+    .regex(/^[a-f\d]{24}$/i, "invalid doctor id"),
   appointment: z
     .string({ required_error: "appointment id is required" })
     .regex(/^[a-f\d]{24}$/i, "invalid appointment id"),

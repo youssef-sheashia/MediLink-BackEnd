@@ -50,7 +50,7 @@ app.use("/api/v1/clinic", clinicRouter);
 app.use("/api/v1/specializations", specializationRouter);
 app.use("/api/v1/receptionist", receptionistRouter);
 app.use("/api/v1/patient", patientRouter);
-app.use("/api/v1/appointment", appointmentRouter);
+app.use("/api/v1/appointments", appointmentRouter);
 app.use("/api/v1/prescriptions", prescriptionRouter);
 app.use("/api/v1/medicalReports", medicalReportRouter);
 /////handel invalid routes and must be after all midlleware

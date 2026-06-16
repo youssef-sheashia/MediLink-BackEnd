@@ -1,5 +1,5 @@
-import catchAsync from "../utils/catchAsync";
-import MedicalReport from "../models/medicalReportModel";
+import catchAsync from "../utils/catchAsync.js";
+import MedicalReport from "../models/medicalReportModel.js";
 import mongoose from "mongoose";
 export const createMedicalReport = catchAsync(async (req, res, next) => {
   const medicalReport = await MedicalReport.create(req.body);

@@ -1,6 +1,6 @@
-import catchAsync from "../utils/catchAsync";
+import catchAsync from "../utils/catchAsync.js";
 import mongoose from "mongoose";
-import Prescription from "../models/prescriptionModel";
+import Prescription from "../models/prescriptionModel.js";
 
 export const createPrescription = catchAsync(async (req, res, next) => {
   const prescription = await Prescription.create(req.body);

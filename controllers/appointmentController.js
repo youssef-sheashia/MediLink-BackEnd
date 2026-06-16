@@ -1,4 +1,7 @@
 import catchAsync from "../utils/catchAsync.js";
+import { APIFeatures } from "../utils/apiFeatures.js";
+import Appointment from "../models/appointmentModel.js";
+import User from "../models/userModel.js";
 export const getMyAppointments = catchAsync(async (req, res, next) => {
   const { date, startDate, endDate, month, year } = req.query;
 
@@ -12,7 +15,7 @@ export const getMyAppointments = catchAsync(async (req, res, next) => {
     end.setHours(23, 59, 59, 999);
     filter.date = { $gte: start, $lte: end };
   } else if (startDate && endDate) {
-    // month startDate=2026-04-13&endDate=2026-04-19
+    // week startDate=2026-04-13&endDate=2026-04-19
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
     const end = new Date(endDate);
@@ -33,5 +36,62 @@ export const getMyAppointments = catchAsync(async (req, res, next) => {
     status: "success",
     results: appointments.length,
     data: { appointments },
+  });
+});
+
+export const getPatientForDoctor = catchAsync(async (req, res, next) => {
+  const doctorId = req.user._id;
+  const { search , page = 1, limit = 10 } = req.query;
+
+  const patients = await Appointment.aggregate([
+    { $match: { doctor: new mongoose.Types.ObjectId(doctorId) } },
+
+    {
+      $group: {
+        _id: "$patient",
+        visitCount: { $sum: 1 },
+      },
+    },
+
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "patient",
+      },
+    },
+
+    { $unwind: "$patient" },
+    ...(search
+      ? [
+          {
+            $match: {
+              $or: [
+                { "patient.firstName": { $regex: search, $options: "i" } },
+                { "patient.lastName": { $regex: search, $options: "i" } },
+              ],
+            },
+          },
+        ]
+      : []),
+    {
+      $project: {
+        _id: 0,
+        patientId: "$_id",
+        firstName: "$patient.firstName",
+        lastName: "$patient.lastName",
+        phone: "$patient.phone",
+        visitCount: 1,
+      },
+    },
+    { $skip: (page - 1) * limit },
+    { $limit: limit },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    length: patients.length,
+    data: { patients },
   });
 });
