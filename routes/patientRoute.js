@@ -2,18 +2,27 @@ import express from "express";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
 import {
+  completeMyProfile,
   getAllPatients,
-  getPateintById,
-  deletePateint,
+  getPatientById,
+  deletePatient,
   changeActiveStatus,
-  deleteManyPateints,
+  deleteManyPatients,
 } from "../controllers/patientController.js";
+
 const router = express.Router();
+router.patch(
+  "/complete-profile",
+  authenticate,
+  restrictTo("patient"),
+  completeMyProfile,
+);
+router.get("/:id", authenticate, restrictTo("admin doctor"), getPatientById);
 router.use(authenticate, restrictTo("admin"));
 
 router.get("/", getAllPatients);
-router.get("/:id", getPateintById);
-router.delete("/:id", deletePateint);
+
+router.delete("/:id", deletePatient);
 router.patch("/:id/active", changeActiveStatus);
-router.delete("/deleteMany", deleteManyPateints);
+router.delete("/deleteMany", deleteManyPatients);
 export default router;

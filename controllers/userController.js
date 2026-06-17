@@ -5,10 +5,21 @@ import Receptionist from "../models/receptionistModel.js";
 import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/appError.js";
 export const getOneUser = getOne(User);
-export const deleteUser = deleteOne(User);
 export const getAllUsers = getAll(User);
 
 /////////////////////////////////
+export const deleteUser = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id).select("+active");
+  if (!user) {
+    return next(new AppError("user not found", 404));
+  }
+  user.active = false;
+  await user.save({ validateBeforeSave: false });
+  res.status(204).json({
+    status: "success",
+  });
+});
+
 export const getMyProfile = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id);
 

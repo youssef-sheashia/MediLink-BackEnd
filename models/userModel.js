@@ -72,9 +72,9 @@ userSchema.pre("save", function () {
   if (!this.isModified("password") || this.isNew) return;
   this.passwordChangedAt = Date.now() - 1000;
 });
-userSchema.pre("find", function () {
-  this.find({ role: { $ne: "admin" } });
-});
+// userSchema.pre(/^find/, function () {
+//   this.where({ role: { $ne: "admin" }, active: { $ne: false } });
+// });
 // >>>>>>> 6c58e57f1f945301e496db042e5744b77cf4c99e
 userSchema.methods.correctPassword = async (
   candidatePassword,
@@ -92,14 +92,9 @@ userSchema.methods.changedPasswordAfter = function (tokenDate) {
   }
   return false;
 };
-// userSchema.methods.createPasswordResetToken = function () {
-//   const resetToken = crypto.randomBytes(32).toString("hex");
-//   this.passwordResetToken = crypto
-//     .createHash("sha256")
-//     .update(resetToken)
-//     .digest("hex");
-//   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
-//   return resetToken;
-// };
+userSchema.pre(/^find/, function () {
+  this.where({ role: { $ne: "admin" } });
+});
+
 const User = Mongoose.model("User", userSchema);
 export default User;

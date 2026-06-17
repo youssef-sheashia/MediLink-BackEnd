@@ -15,8 +15,13 @@ const patientProfileSchema = new mongoose.Schema(
         message: "invalid blood type",
       },
     },
+    tall: Number,
+    weight: Number,
+    chronicMedications: [String],
     allergies: [String],
     chronicConditions: [String],
+    MedicalFiles: [String],
+
     favoriteDoctors: [
       {
         type: mongoose.Schema.Types.ObjectId,

@@ -84,7 +84,7 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
   // we should create account for user (role=patient) + patientProfile
   const session = await mongoose.startSession();
   session.startTransaction();
-  try{
+  try {
     const newUser = new User({
       firstName,
       lastName,
@@ -94,19 +94,16 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
       password,
       isPreHashed: true,
     });
-    await newUser.save({session});
-    await PatientProfile.create(
-      [{user:newUser._id}],
-      {session}
-    );
+    await newUser.save({ session });
+    await PatientProfile.create([{ user: newUser._id }], { session });
     await session.commitTransaction();
     session.endSession();
     await client.del(`signUp:${phone}`);
     createSendToken(newUser, 201, res);
-  }catch(err){
+  } catch (err) {
     await session.abortTransaction();
     session.endSession();
-    return next(new AppError(err.message, 400))
+    return next(new AppError(err.message, 400));
   }
 });
 export const login = catchAsync(async (req, res, next) => {
