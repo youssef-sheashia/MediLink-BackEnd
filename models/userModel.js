@@ -92,9 +92,9 @@ userSchema.methods.changedPasswordAfter = function (tokenDate) {
   }
   return false;
 };
-userSchema.pre(/^find/, function () {
-  this.where({ role: { $ne: "admin" } });
-});
+// userSchema.pre(/^find/, function () {
+//   this.where({ role: { $ne: "admin" } });
+// });
 
 const User = Mongoose.model("User", userSchema);
 export default User;
