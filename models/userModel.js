@@ -92,6 +92,7 @@ userSchema.methods.changedPasswordAfter = function (tokenDate) {
   }
   return false;
 };
+
 // userSchema.pre(/^find/, function () {
 //   this.where({ role: { $ne: "admin" } });
 // });
