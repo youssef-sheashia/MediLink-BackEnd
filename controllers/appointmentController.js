@@ -39,7 +39,16 @@ export const getMyAppointments = catchAsync(async (req, res, next) => {
     data: { appointments },
   });
 });
-
+export const getAllAppointments = catchAsync(async (req, res, next) => {
+  const allAppointments = await Appointment.find()
+    .populate("patient", "firstName lastName phone photo")
+    .populate("doctor", "firstName lastName phone photo")
+  res.status(200).json({
+    status: "success",
+    length: allAppointments.length,
+    data: { allAppointments },
+  });
+});
 export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
   const { search  } = req.query;
@@ -65,6 +74,7 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
     },
 
     { $unwind: "$patient" },
+    
     ...(search
       ? [
           {
@@ -94,7 +104,7 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     length: patients.length,
-    data: { patients },
+    data: { patients, },
   });
 });
 

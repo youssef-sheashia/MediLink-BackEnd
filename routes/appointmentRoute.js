@@ -3,10 +3,11 @@ import authnticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
 import { appointmentQuerySchema } from "../utils/validators.js";
 import { validateQuery } from "../middlewares/validate.js";
-import { getMyAppointments,getPatientForDoctor,getBookedAppointmentsForPatient } from "../controllers/appointmentController.js";
+import { getMyAppointments,getPatientForDoctor,getBookedAppointmentsForPatient ,getAllAppointments} from "../controllers/appointmentController.js";
 const router = express.Router();
 
 router.use(authnticate);
+router.get("/",restrictTo("admin"),getAllAppointments)
 router.get(
   "/",
   restrictTo("doctor"),
