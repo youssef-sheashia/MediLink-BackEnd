@@ -12,8 +12,8 @@ const router = express.Router();
 router.use(authenticate, restrictTo("admin"));
 
 router.get("/", getAllPatients);
+router.delete("/deleteMany", deleteManyPateints);
 router.get("/:id", getPateintById);
 router.delete("/:id", deletePateint);
 router.patch("/:id/active", changeActiveStatus);
-router.delete("/deleteMany", deleteManyPateints);
 export default router;

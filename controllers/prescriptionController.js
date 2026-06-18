@@ -5,7 +5,10 @@ import Prescription from "../models/prescriptionModel.js";
 import User from "../models/userModel.js";
 
 export const createPrescription = catchAsync(async (req, res, next) => {
-  const prescription = await Prescription.create(req.body);
+  const prescription = await Prescription.create({
+    ...req.body,
+    doctor: req.user._id,
+  });
   res.status(201).json({
     status: "success",
     data: {

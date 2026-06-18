@@ -31,7 +31,7 @@ export const getPateintById = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(new AppError("Invalid patient ID", 400));
   }
-  const pateint = await User.findById({ _id: req.params.id, role: "patient" });
+  const pateint = await User.findOne({ _id: req.params.id, role: "patient" });
   if (!pateint) {
     return next(new AppError("Patient not found", 404));
   }
@@ -41,7 +41,7 @@ export const deletePateint = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(new AppError("Invalid patient ID", 400));
   }
-  const pateint = await User.findById({ _id: req.params.id, role: "patient" });
+  const pateint = await User.findOne({ _id: req.params.id, role: "patient" });
   if (!pateint) {
     return next(new AppError("Patient not found", 404));
   }
@@ -54,7 +54,7 @@ export const changeActiveStatus = catchAsync(async (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return next(new AppError("Invalid patient ID", 400));
   }
-  const pateint = await User.findById({ _id: req.params.id, role: "patient" });
+  const pateint = await User.findOne({ _id: req.params.id, role: "patient" });
   if (!pateint) {
     return next(new AppError("Patient not found", 404));
   }

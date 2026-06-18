@@ -8,7 +8,7 @@ import {getAllSpecializations, createSpecialization, updateSpecialization, delet
 
 const specializationRouter = express.Router();
 
-specializationRouter.use(authenticate, restrictTo("admin"));
+specializationRouter.use(authenticate);
 
 specializationRouter.get(
   "/",
@@ -17,16 +17,19 @@ specializationRouter.get(
 
 specializationRouter.post(
   "/",
+  restrictTo("admin"),
   validate(specializationSchema),
   createSpecialization,
 );
 specializationRouter.put(
   "/:id",
+  restrictTo("admin"),
   validate(specializationSchema),
   updateSpecialization,
 );
 specializationRouter.delete(
   "/:id",
+  restrictTo("admin"),
   deleteSpecialization,
 );
 export default specializationRouter;

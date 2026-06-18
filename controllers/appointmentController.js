@@ -1,4 +1,5 @@
 import catchAsync from "../utils/catchAsync.js";
+import mongoose from "mongoose";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
 import User from "../models/userModel.js";
@@ -41,8 +42,9 @@ export const getMyAppointments = catchAsync(async (req, res, next) => {
 
 export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
-  const { search , page = 1, limit = 10 } = req.query;
-
+  const { search  } = req.query;
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
   const patients = await Appointment.aggregate([
     { $match: { doctor: new mongoose.Types.ObjectId(doctorId) } },
 
@@ -93,5 +95,119 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
     status: "success",
     length: patients.length,
     data: { patients },
+  });
+});
+
+
+export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next) => {
+  const patientId = req.user._id;
+  const { search, page = 1, limit = 10 } = req.query;
+
+  const appointments = await Appointment.aggregate([
+    // 1. only this patient's appointments
+    { $match: { patient: new mongoose.Types.ObjectId(patientId) } },
+
+    // 2. get doctor user data (name, photo)
+    {
+      $lookup: {
+        from: "users",
+        let: { doctorId: "$doctor" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$_id", "$$doctorId"] },
+            },
+          },
+          {
+            $project: {
+              firstName: 1,
+              lastName: 1,
+              photo: 1,
+            },
+          },
+        ],
+        as: "doctor",
+      },
+    },
+    { $unwind: "$doctor" },
+
+    // 3. get doctor specialization from doctorprofiles
+    {
+      $lookup: {
+        from: "doctorprofiles",
+        let: { doctorId: "$doctor._id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$user", "$$doctorId"] },
+            },
+          },
+          {
+            $lookup: {
+              from: "specializations",
+              localField: "specialization",
+              foreignField: "_id",
+              as: "specialization",
+            },
+          },
+          { $unwind: { path: "$specialization", preserveNullAndEmpty: true } },
+          {
+            $project: {
+              "specialization.name": 1,
+            },
+          },
+        ],
+        as: "doctorProfile",
+      },
+    },
+    {
+      $unwind: {
+        path: "$doctorProfile",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 4. search by doctor name if provided
+    ...(search
+      ? [
+          {
+            $match: {
+              $or: [
+                { "doctor.firstName": { $regex: search, $options: "i" } },
+                { "doctor.lastName": { $regex: search, $options: "i" } },
+              ],
+            },
+          },
+        ]
+      : []),
+
+    // 5. sort by latest first
+    { $sort: { date: -1 } },
+
+    // 6. pagination
+    { $skip: (Number(page) - 1) * Number(limit) },
+    { $limit: Number(limit) },
+
+    // 7. return only what the UI needs
+    {
+      $project: {
+        _id: 1,
+        date: 1,
+        slotTime: 1,
+        status: 1,
+        fees: 1,
+        "doctor._id": 1,
+        "doctor.firstName": 1,
+        "doctor.lastName": 1,
+        "doctor.photo": 1,
+        "doctorProfile.specialization.name": 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    length: appointments.length,
+    data: { appointments },
   });
 });

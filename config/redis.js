@@ -11,6 +11,13 @@ const client = createClient({
 
 client.on("error", (err) => console.log("Redis Client Error", err));
 
-await client.connect();
+try {
+  await client.connect();
+} catch (err) {
+  console.warn(
+    "Redis unavailable; continuing without cache/OTP storage:",
+    err.message,
+  );
+}
 
 export default client;

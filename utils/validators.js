@@ -4,8 +4,9 @@ export const egyptianPhone = z
     required_error: "phone is required",
     invalid_type_error: "phone must be a string",
   })
+  .trim() // Removes accidental whitespace
   .regex(
-    /^(\+?2?0)?1[0125][0-9]{8}$/,
+    /^(\+20|20|0)?1[0-9]{8}$/,
     "please provide a valid egyptian phone number",
   );
 
@@ -22,7 +23,8 @@ export const signUpSchema = z
       .max(20, "last name must be less than 20 characters"),
 
     gender: z.enum(["male", "female"], {
-      required_error: "gender is required",
+      required_error: "Gender is required",
+      invalid_type_error: "Gender must be 'male' or 'female'",
     }),
 
     phone: egyptianPhone,
@@ -95,7 +97,7 @@ export const signUpSchema = z
       .max(new Date().getFullYear(), "year cannot be in the future"),
   })
   .refine((data) => data.password === data.confirmpassword, {
-    message: "passwords do not match",
+    message: "Password and confirm password do not match. Please try again",
     path: ["confirmpassword"],
   })
   .refine(
@@ -243,13 +245,13 @@ export const createDoctorSchema = z
       .array(
         z.enum(
           [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
+            "الاحد",
+            "الاثنين",
+            "الثلاثاء",
+            "الاربعاء",
+            "الخميس",
+            "الجمعة",
+            "السبت",
           ],
           {
             invalid_type_error: "each working day must be a valid day name",
@@ -310,13 +312,13 @@ export const updateDoctorSchema = z
     workingDays: z
       .array(
         z.enum([
-          "monday",
-          "tuesday",
-          "wednesday",
-          "thursday",
-          "friday",
-          "saturday",
-          "sunday",
+          "الاحد",
+          "الاثنين",
+          "الثلاثاء",
+          "الاربعاء",
+          "الخميس",
+          "الجمعة",
+          "السبت",
         ]),
       )
       .min(1)
@@ -474,7 +476,7 @@ export const updatePasswordSchema = z
   })
   .refine((data) => data.newpassword === data.confirmnewpassword, {
     message: "passwords do not match",
-    path: ["confirmpassword"],
+    path: ["confirmnewpassword"],
   });
 export const createreceptionistSchema = z
   .object({
@@ -560,13 +562,13 @@ export const createreceptionistSchema = z
       .array(
         z.enum(
           [
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
-            "sunday",
+            "الاحد",
+            "الاثنين",
+            "الثلاثاء",
+            "الاربعاء",
+            "الخميس",
+            "الجمعة",
+            "السبت",
           ],
           {
             invalid_type_error: "each working day must be a valid day name",

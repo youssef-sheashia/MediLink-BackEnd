@@ -5,6 +5,7 @@ import {
   getDoctor,
   updateDoctor,
   deleteDoctor,
+  getAvailableSlots,
 } from "../controllers/doctorController.js";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
@@ -20,12 +21,11 @@ doctorRouter.use(authenticate);
 
 doctorRouter.post(
   "/",
-
   restrictTo("admin"),
   validate(createDoctorSchema),
   createDoctor,
 );
 doctorRouter.patch("/:id", restrictTo("admin"), updateDoctor);
 doctorRouter.delete("/:id", restrictTo("admin"), deleteDoctor);
-
+doctorRouter.get("/:id/available-slots",getAvailableSlots);
 export default doctorRouter;
