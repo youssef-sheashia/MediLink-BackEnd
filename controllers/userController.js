@@ -7,6 +7,7 @@ import catchAsync from "../utils/catchAsync.js";
 import AppError from "../utils/appError.js";
 import ImageKit from "imagekit";
 import sharp from "sharp";
+import mongoose from "mongoose";
 export const getOneUser = getOne(User);
 export const getAllUsers = getAll(User);
 
@@ -32,12 +33,12 @@ export const uploadSingleToImageKit = (folder) =>
     next();
   });
 
-export const deleteUser = catchAsync(async (req, res, next) => {
+export const changeUserActive = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.params.id).select("+active");
   if (!user) {
     return next(new AppError("user not found", 404));
   }
-  user.active = false;
+  user.active = !user.active;
   await user.save({ validateBeforeSave: false });
   res.status(204).json({
     status: "success",
@@ -57,7 +58,7 @@ export const getMyProfile = catchAsync(async (req, res, next) => {
     receptionist: Receptionist,
   };
 
-  const Model = profileModels[user.role];
+  const Model = user.role !== "admin" ? profileModels[user.role] : null;
 
   const profile = Model ? await Model.findOne({ user: user._id }) : null;
 
@@ -102,7 +103,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
 
   // 3. update user
   const updateUser = await User.findByIdAndUpdate(req.user.id, updateObj, {
-    new: true,
+    returnDocument: 'after',
     runValidators: true,
   });
 

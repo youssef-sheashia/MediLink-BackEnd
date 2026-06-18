@@ -75,11 +75,10 @@ userSchema.pre("save", function () {
 //   this.where({ role: { $ne: "admin" }, active: { $ne: false } });
 // });
 // >>>>>>> 6c58e57f1f945301e496db042e5744b77cf4c99e
-userSchema.methods.correctPassword = async (
+userSchema.methods.correctPassword = async function (
   candidatePassword,
-  userpassword,
-) => {
-  return await bcrypt.compare(candidatePassword, userpassword);
+)  {
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 userSchema.methods.changedPasswordAfter = function (tokenDate) {
   if (this.passwordChangedAt) {

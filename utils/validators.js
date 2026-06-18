@@ -1,4 +1,5 @@
 import { z } from "zod";
+////////////////////////           constant Shemas      /////////////////////////
 export const egyptianPhone = z
   .string({
     required_error: "phone is required",
@@ -9,6 +10,52 @@ export const egyptianPhone = z
     /^(?:\+20|0)?1[0125][0-9]{8}$/,
     "please provide a valid egyptian phone number",
   );
+const passwordSchema = z
+  .string({
+    required_error: "password is required",
+    invalid_type_error: "password must be a string",
+  })
+  .superRefine((val, ctx) => {
+    if (val.length < 8) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Password must be at least 8 characters long",
+      });
+    }
+
+    if (!/[a-z]/.test(val)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Password must contain at least one lowercase letter",
+      });
+    }
+
+    if (!/[A-Z]/.test(val)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Password must contain at least one uppercase letter",
+      });
+    }
+
+    if (!/[0-9]/.test(val)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Password must contain at least one number",
+      });
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(val)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Password must contain at least one special character",
+      });
+    }
+  });
+const confirmPasswordSchema = z.string({
+  required_error: "confirm password is required",
+  invalid_type_error: "confirm password must be a string",
+});
+///////////////////////////////////////////////////// signUp Schema //////////////////////////////////
 
 export const signUpSchema = z
   .object({
@@ -26,49 +73,9 @@ export const signUpSchema = z
       required_error: "Gender is required",
       invalid_type_error: "Gender must be 'male' or 'female'",
     }),
-
     phone: egyptianPhone,
-
-    password: z.string().superRefine((val, ctx) => {
-      if (val.length < 8) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Password must be at least 8 characters long",
-        });
-      }
-
-      if (!/[a-z]/.test(val)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Password must contain at least one lowercase letter",
-        });
-      }
-
-      if (!/[A-Z]/.test(val)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Password must contain at least one uppercase letter",
-        });
-      }
-
-      if (!/[0-9]/.test(val)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Password must contain at least one number",
-        });
-      }
-
-      if (!/[!@#$%^&*(),.?":{}|<>]/.test(val)) {
-        ctx.addIssue({
-          code: "custom",
-          message: "Password must contain at least one special character",
-        });
-      }
-    }),
-    confirmpassword: z.string({
-      required_error: "please confirm your password",
-      invalid_type_error: "password must be a string",
-    }),
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
     day: z
       .number({
         required_error: "day is required",
@@ -96,9 +103,9 @@ export const signUpSchema = z
       .min(1900, "year must be after 1900")
       .max(new Date().getFullYear(), "year cannot be in the future"),
   })
-  .refine((data) => data.password === data.confirmpassword, {
+  .refine((data) => data.password === data.confirmPassword, {
     message: "Password and confirm password do not match. Please try again",
-    path: ["confirmpassword"],
+    path: ["confirmPassword"],
   })
   .refine(
     (data) => {
@@ -130,6 +137,12 @@ export const loginSchema = z.object({
     })
     .min(1, "password is required"),
 });
+///////////////////////////////////////////////////// forget Schema //////////////////////////////////
+
+export const forgetSchema = z.object({
+  phone: egyptianPhone,
+});
+///////////////////////////////////////////////////// verifyOTP Schema //////////////////////////////////
 
 export const verifyOTP_Schema = z.object({
   phone: egyptianPhone,
@@ -140,7 +153,28 @@ export const verifyOTP_Schema = z.object({
     })
     .min(1, "otp is required"),
 });
-
+///////////////////////////////////////////////////// reset password Schema //////////////////////////////////
+export const resetPasswordSchema = z
+  .object({
+    phone: egyptianPhone,
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password and confirm password do not match. Please try again",
+    path: ["confirmPassword"],
+  });
+///////////////////////////////////////////////////// update password Schema //////////////////////////////////
+export const updatePasswordSchema = z
+  .object({
+    password: passwordSchema,
+    newpassword: passwordSchema,
+    confirmnewpassword: confirmPasswordSchema,
+  })
+  .refine((data) => data.newpassword === data.confirmnewpassword, {
+    message: "passwords do not match",
+    path: ["confirmnewpassword"],
+  });
 ////////////////////////////////////////////////////////////////////////
 // validators/doctorValidator.js
 
@@ -351,10 +385,10 @@ export const ClinicInformationsSchema = z.object({
     .max(100, "clinic name must be at most 100 characters")
     .trim(),
   address: z
-      .string({ required_error: "city is required" })
-      .min(2, "city must be at least 2 characters")
-      .trim(),
-  
+    .string({ required_error: "city is required" })
+    .min(2, "city must be at least 2 characters")
+    .trim(),
+
   description: z
     .string({ required_error: "description is required" })
     .min(10, "description must be at least 10 characters")
@@ -446,29 +480,6 @@ export const specializationSchema = z.object({
 });
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-export const updatePasswordSchema = z
-  .object({
-    password: z
-      .string({ required_error: "password is required" })
-      .min(8, "password must be at least 8 characters"),
-    newpassword: z
-      .string({
-        required_error: "password is required",
-        invalid_type_error: "password must be a string",
-      })
-      .min(8, "password must be at least 8 characters")
-      .regex(/[A-Z]/, "password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "password must contain at least one number"),
-
-    confirmnewpassword: z.string({
-      required_error: "please confirm your password",
-      invalid_type_error: "password must be a string",
-    }),
-  })
-  .refine((data) => data.newpassword === data.confirmnewpassword, {
-    message: "passwords do not match",
-    path: ["confirmnewpassword"],
-  });
 export const createreceptionistSchema = z
   .object({
     // ─── User fields ────────────────────────────────────────────────────────────

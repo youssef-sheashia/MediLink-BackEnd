@@ -115,11 +115,11 @@ export const verifyOTP = catchAsync(async (req, res, next) => {
 export const login = catchAsync(async (req, res, next) => {
   const { phone, password } = req.body;
   const user = await User.findOne({ phone }).select("+password");
-  if (!user || !(await user.correctPassword(password, user.password)))
+  if (!user || !(await user.correctPassword(password)))
     return next(new AppError("invalid phone or password", 401));
   createSendToken(user, 200, res);
 });
-
+//* //////////////////////////Move restrictTo is middleware not controller ////
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -135,18 +135,7 @@ export const restrictTo = (...roles) => {
 };
 export const forgetpassword = catchAsync(async (req, res, next) => {
   const { phone } = req.body;
-
-  const result = egyptianPhone.safeParse(phone);
-
-  if (!result.success) {
-    return res.status(400).json({
-      status: "fail",
-      errors: result.error.flatten(),
-    });
-  }
-
   const user = await User.findOne({ phone });
-
   if (!user) {
     return next(new AppError("user not found", 404));
   }
@@ -230,8 +219,8 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("user not found", 404));
   }
-
-  user.password = password;
+  const hashedPassword = await bcrypt.hash(password, 12);
+  user.password = hashedPassword;
   await user.save();
 
   await client.del(`forgetPassword:${phone}`);
@@ -241,9 +230,10 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 
 export const updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");
-  if (!user || !(await user.correctPassword(req.body.password, user.password)))
+  if (!user || !(await user.correctPassword(req.body.password)))
     return next(new AppError("the password or email is not correct ", 401));
-  user.password = req.body.newpassword;
+  const hashedPassword = await bcrypt.hash(req.body.newpassword, 12);
+  user.password = hashedPassword;
   await user.save();
   res.status(200).json({
     status: "success",

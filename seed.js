@@ -12,6 +12,7 @@ import Clinic from "./models/clinicModel.js";
 import Appointment from "./models/appointmentModel.js";
 import Prescription from "./models/prescriptionModel.js";
 import MedicalReport from "./models/medicalReportModel.js";
+import Review from "./models/reviewModel.js";
 
 // ─── all users share this password: Test@1234 ───────────────────────────────
 const HASHED_PASSWORD = await bcrypt.hash("Test@1234", 12);
@@ -31,6 +32,7 @@ const seed = async () => {
     Appointment.deleteMany(),
     Prescription.deleteMany(),
     MedicalReport.deleteMany(),
+    Review.deleteMany(),
   ]);
   console.log("🧹 Collections cleared");
 
@@ -47,11 +49,7 @@ const seed = async () => {
   // ── 3. CLINIC ─────────────────────────────────────────────────────────────
   await Clinic.create({
     name: "Medilink Clinic",
-    address: {
-      country: "Egypt",
-      city: "Cairo",
-      governorate: "Cairo",
-    },
+    address: "Cairo, Egypt",
     description: "A modern clinic providing high quality healthcare services.",
     phone: "01012345678",
     email: "medilink@clinic.com",
@@ -140,7 +138,7 @@ const seed = async () => {
       user: doctor1._id,
       specialization: cardiology._id,
       experienceYears: 10,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "09:00",
       endTime: "17:00",
     },
@@ -148,7 +146,7 @@ const seed = async () => {
       user: doctor2._id,
       specialization: dermatology._id,
       experienceYears: 7,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "10:00",
       endTime: "18:00",
     },
@@ -156,7 +154,7 @@ const seed = async () => {
       user: doctor3._id,
       specialization: pediatrics._id,
       experienceYears: 15,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "08:00",
       endTime: "16:00",
     },
@@ -484,6 +482,32 @@ const seed = async () => {
     },
   ]);
   console.log("✅ Medical reports created");
+
+  // ── 11. REVIEWS ───────────────────────────────────────────────────────────
+  await Promise.all([
+    Review.create({
+      patient: patient1._id,
+      doctor: doctor1._id,
+      appointment: apt1._id,
+      stars: 4.5,
+      comment: "Great doctor, highly recommended!",
+    }),
+    Review.create({
+      patient: patient2._id,
+      doctor: doctor1._id,
+      appointment: apt2._id,
+      stars: 5,
+      comment: "Very professional and caring.",
+    }),
+    Review.create({
+      patient: patient3._id,
+      doctor: doctor2._id,
+      appointment: apt3._id,
+      stars: 4,
+      comment: "Good experience overall.",
+    }),
+  ]);
+  console.log("✅ Reviews created");
 
   // ── SUMMARY ───────────────────────────────────────────────────────────────
   console.log("\n🎉 Database seeded successfully!\n");

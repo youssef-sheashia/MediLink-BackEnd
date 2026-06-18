@@ -8,12 +8,12 @@ import {getAllSpecializations, createSpecialization, updateSpecialization, delet
 
 const specializationRouter = express.Router();
 
-specializationRouter.use(authenticate);
-
 specializationRouter.get(
   "/",
   getAllSpecializations,
 );
+
+specializationRouter.use(authenticate);
 
 specializationRouter.post(
   "/",

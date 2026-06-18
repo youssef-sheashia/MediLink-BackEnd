@@ -8,18 +8,20 @@ import {
   restrictTo,
   updatePassword,
 } from "../controllers/authController.js";
-import { validate } from "../middlewares/validate.js";
+import { validate,validateIdParams } from "../middlewares/validate.js";
 import authenticate from "../middlewares/authenticate.js";
 import {
   signUpSchema,
-  loginSchema,
   verifyOTP_Schema,
+  loginSchema,
+  forgetSchema,
+  resetPasswordSchema,
   updatePasswordSchema,
 } from "../utils/validators.js";
 import {
   getAllUsers,
   getOneUser,
-  deleteUser,
+  changeUserActive,
   getMyProfile,
   updateMe,
   uploadSingleToImageKit,
@@ -28,23 +30,23 @@ import { uploadSingleImage } from "../middlewares/multer.js";
 /////////////////
 import express from "express";
 const userRouter = express.Router();
+// Auth
 userRouter.post("/signup", validate(signUpSchema), signUp);
 userRouter.post("/verifyOTP", validate(verifyOTP_Schema), verifyOTP);
 userRouter.post("/login", validate(loginSchema), login);
-userRouter.post("/forgetPassword", forgetpassword);
-userRouter.post("/verifyPasswordOTP", verifyForgetPassword);
-userRouter.patch("/resetPassword", resetPassword);
-
-//////////////////////////////////
+userRouter.post("/forgetPassword", validate(forgetSchema),forgetpassword);
+userRouter.post("/verifyPasswordOTP",validate(verifyOTP_Schema), verifyForgetPassword);
+userRouter.patch("/resetPassword", validate(resetPasswordSchema),resetPassword);
+// Users
 userRouter.use(authenticate);
 userRouter.get("/me", getMyProfile);
-userRouter.patch(
+userRouter.patch(//* we should edit it to update all data otherwise password so i think to make four route for each one because each one has its own data
   "/updateMe",
   uploadSingleImage("photo"),
   uploadSingleToImageKit("users"),
   updateMe,
 );
-userRouter.patch(
+userRouter.patch(//* check this 
   "/updatePassword",
   validate(updatePasswordSchema),
   updatePassword,
@@ -53,6 +55,6 @@ userRouter.patch(
 ////////////////////////////////////////////////
 userRouter.use(restrictTo("admin"));
 userRouter.get("/", getAllUsers);
-userRouter.delete("/:id", deleteUser);
+userRouter.patch("/:id", validateIdParams,changeUserActive);
 
 export default userRouter;

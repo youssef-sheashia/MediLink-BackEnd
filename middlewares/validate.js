@@ -1,4 +1,5 @@
 import AppError from "../utils/appError.js";
+import mongoose from "mongoose";
 export const validate = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.body ?? {});
   if (!result.success) {
@@ -28,3 +29,9 @@ export const validateQuery = (schema) => (req, res, next) => {
   req.query = result.data;
   next();
 };
+export const validateIdParams = (req,res,next)=>{
+  const {id} = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) 
+    return next(new AppError("Invalid Id", 400));
+  next();
+}

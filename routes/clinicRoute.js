@@ -9,24 +9,10 @@ const clinicRouter = express.Router();
 
 clinicRouter.use(authenticate, restrictTo("admin"));
 // informations routes
-clinicRouter.get(
-  "/informations",
-  getClinicInformations,
-);
+clinicRouter.get("/informations",getClinicInformations);
 
-clinicRouter.put(
-  "/informations",
-  validate(ClinicInformationsSchema),
-  updateClinicInformations,
-);
+clinicRouter.put("/informations",validate(ClinicInformationsSchema),updateClinicInformations);
 // schedule routes
-clinicRouter.get(
-  "/schedule",
-  getClinicSchedule,
-);
-clinicRouter.put(
-  "/schedule",
-  validate(updateScheduleSchema),
-  updateClinicSchedule,
-);
+clinicRouter.get("/schedule",getClinicSchedule);
+clinicRouter.put("/schedule",validate(updateScheduleSchema),updateClinicSchedule);
 export default clinicRouter;
