@@ -28,6 +28,7 @@ const createSendToken = function (user, statusCode, res) {
     return res.cookie("jwt", token, cookieOptions).status(statusCode).json({
       status: "success",
       user,
+      token
     });
   }
   // in dev
