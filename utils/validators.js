@@ -280,13 +280,9 @@ export const createDoctorSchema = z
       .min(2, "Specialization name must be at least 2 characters long")
       .max(100, "Specialization name cannot exceed 100 characters")
       .trim()
-      .regex(
-        /^[a-zA-Z\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+$/,
-        {
-          message:
-            "Specialization name must contain only Arabic or English letters and spaces",
-        },
-      ),
+      .regex(/^[0-9a-fA-F]{24}$/, {
+        message: "Invalid specialization ID",
+      }),
     experienceYears: z
       .number({
         required_error: "experience years is required",
