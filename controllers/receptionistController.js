@@ -96,7 +96,7 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
   }
 
 
-  const userFields = ['firstName', 'lastName', 'gender', 'birthDate', 'phone', 'photo', 'active'];
+  const userFields = ['firstName', 'lastName', 'gender', 'birthDate', 'photo', 'active'];
   const receptionistFields = ['education','status','workingDays','startTime','endTime'];
   
   const userData = {};

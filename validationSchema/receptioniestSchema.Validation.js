@@ -32,11 +32,6 @@ export const receptionistUpdateSchema = z
       .refine((val) => new Date(val) < new Date(), "birthDate must be in the past")
       .optional(),
 
-    phone: z
-      .string()
-      .regex(/^(\+?2?0)?1[0-9]{8}$/, "please provide a valid egyptian phone number")
-      .optional(),
-
     photo: z.string().url("Please provide a valid image URL").optional(),
     
     active: z.boolean().optional(),
