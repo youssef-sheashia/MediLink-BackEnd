@@ -8,10 +8,10 @@ import {getAllSpecializations, createSpecialization, updateSpecialization, delet
 
 const specializationRouter = express.Router();
 
-specializationRouter.use(authenticate,restrictTo("admin"));
 specializationRouter.get("/",getAllSpecializations);
+specializationRouter.get("/:id",getDoctorsBySpecialization);
+specializationRouter.use(authenticate,restrictTo("admin"));
 specializationRouter.post("/",validate(specializationSchema),createSpecialization);
 specializationRouter.put("/:id",validate(specializationSchema),updateSpecialization);
 specializationRouter.delete("/:id",deleteSpecialization);
-specializationRouter.get("/:id",getDoctorsBySpecialization);
 export default specializationRouter;
