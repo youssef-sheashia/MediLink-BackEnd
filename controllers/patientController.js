@@ -89,7 +89,6 @@ export const getPatientById = catchAsync(async (req, res, next) => {
     return next(
       new AppError("patient not found or account is deactivated", 404),
     );
-
   res.status(200).json({
     status: "success",
     data: { patient: result[0] },

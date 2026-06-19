@@ -75,16 +75,17 @@ export const createReceptionist = catchAsync(async (req, res, next) => {
   }
 });
 export const getAllReceptionist = catchAsync(async (req, res, next) => {
-  const receptionists = await Receptionist.find();
-
-  res.status(200).json({
-    status: "success",
-    length: receptionists.length,
-    data: { receptionists },
+  const receptionists = await Receptionist.find().populate({
+    path: "user",
+    select: "-_id",
   });
+  flattenAndRespond(res, { key: "receptionists", data: receptionists });
 });
 export const getReceptionist = catchAsync(async (req, res, next) => {
-  const receptionist = await Receptionist.findOne({ user: req.params.id });
+  const receptionist = await Receptionist.findById(req.params.id).populate({
+    path: "user",
+    select: "-_id",
+  });
 
   if (!receptionist) return next(new AppError("receptionist not found", 404));
 
@@ -94,21 +95,52 @@ export const getReceptionist = catchAsync(async (req, res, next) => {
   });
 });
 export const updateReceptionist = catchAsync(async (req, res, next) => {
-  delete req.body.user;
-
-  const updatedReceptionist = await Receptionist.findOneAndUpdate(
-    { user: req.params.id },
-    req.body,
-    {
-      new: true,
-      runValidators: true,
-    },
-  );
-
-  if (!updatedReceptionist) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(new AppError("Invalid Id", 400));
+  }
+  const receptionistProfile = await Receptionist.findById(id);
+  if (!receptionistProfile) {
     return next(new AppError("Receptionist not found", 404));
   }
 
+  const userFields = [
+    "firstName",
+    "lastName",
+    "gender",
+    "birthDate",
+    "photo",
+    "active",
+  ];
+  const receptionistFields = [
+    "education",
+    "status",
+    "workingDays",
+    "startTime",
+    "endTime",
+  ];
+
+  const userData = {};
+  const receptionistData = {};
+  Object.keys(req.body).forEach((key) => {
+    if (userFields.includes(key)) {
+      userData[key] = req.body[key];
+    } else if (receptionistFields.includes(key)) {
+      receptionistData[key] = req.body[key];
+    }
+  });
+
+  if (Object.keys(userData).length > 0) {
+    //the probelm
+    await User.findByIdAndUpdate(receptionistProfile.user, userData, {
+      runValidators: true,
+    });
+  }
+  if (Object.keys(receptionistData).length > 0) {
+    await Receptionist.updateOne({ _id: id }, receptionistData);
+  }
+
+  const updatedReceptionist = await Receptionist.findById(id).populate("user");
   res.status(200).json({
     status: "success",
     data: {
@@ -118,8 +150,9 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
 });
 
 export const deleteReceptionist = catchAsync(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+    return next(new AppError("Id is not valid", 400));
   const session = await mongoose.startSession();
-
   try {
     session.startTransaction();
 
