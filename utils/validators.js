@@ -179,7 +179,10 @@ export const specializationSchema = z.object({
     .trim()
     .regex(
       /^[a-zA-Z\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+$/,
-      { message: "Specialization name must contain only Arabic or English letters and spaces" }
+      {
+        message:
+          "Specialization name must contain only Arabic or English letters and spaces",
+      },
     ),
   consultationFee: z
     .number({
@@ -279,7 +282,10 @@ export const createDoctorSchema = z
       .trim()
       .regex(
         /^[a-zA-Z\s\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+$/,
-        { message: "Specialization name must contain only Arabic or English letters and spaces" }
+        {
+          message:
+            "Specialization name must contain only Arabic or English letters and spaces",
+        },
       ),
     experienceYears: z
       .number({
@@ -294,13 +300,13 @@ export const createDoctorSchema = z
       .array(
         z.enum(
           [
-            "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
+            "السبت",
+            "الاحد",
+            "الاثنين",
+            "الثلاثاء",
+            "الاربعاء",
+            "الخميس",
+            "الجمعة",
           ],
           {
             invalid_type_error: "each working day must be a valid day name",
@@ -361,13 +367,13 @@ export const updateDoctorSchema = z
     workingDays: z
       .array(
         z.enum([
-            "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
+          "السبت",
+          "الاحد",
+          "الاثنين",
+          "الثلاثاء",
+          "الاربعاء",
+          "الخميس",
+          "الجمعة",
         ]),
       )
       .min(1)
@@ -419,13 +425,7 @@ export const ClinicInformationsSchema = z.object({
 const workingDaySchema = z
   .object({
     day: z.enum(
-      [ "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday"],
+      ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء", "الخميس", "الجمعة"],
       { required_error: "day is required" },
     ),
 
@@ -486,7 +486,6 @@ export const updateScheduleSchema = z.object({
     .optional(),
 });
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 export const createreceptionistSchema = z
@@ -573,13 +572,13 @@ export const createreceptionistSchema = z
       .array(
         z.enum(
           [
-             "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",
+            "السبت",
+            "الاحد",
+            "الاثنين",
+            "الثلاثاء",
+            "الاربعاء",
+            "الخميس",
+            "الجمعة",
           ],
           {
             invalid_type_error: "each working day must be a valid day name",
