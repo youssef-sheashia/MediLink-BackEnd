@@ -75,11 +75,11 @@ export const createReceptionist = catchAsync(async (req, res, next) => {
   }
 });
 export const getAllReceptionist = catchAsync(async (req, res, next) => {
-  const receptionists = await Receptionist.find().populate('user').select('-__v -createdAt -updatedAt');
+  const receptionists = await Receptionist.find().populate({path: "user",select: "-_id"});
   flattenAndRespond(res, { key: "receptionists", data: receptionists });
 });
 export const getReceptionist = catchAsync(async (req, res, next) => {
-  const receptionist = await Receptionist.findById(req.params.id).populate('user').select('-__v -createdAt -updatedAt');
+  const receptionist = await Receptionist.findById(req.params.id).populate({path:"user",select:"-_id"});
 
   if (!receptionist) return next(new AppError("receptionist not found", 404));
 
