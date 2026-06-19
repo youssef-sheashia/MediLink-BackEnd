@@ -104,7 +104,7 @@ export const getAllPatients = catchAsync(async (req, res, next) => {
   const baseQuery = PatientProfile.find().populate({
     path: "user",
     select:
-      "-password -active -__v -passwordChangedAt -passwordResetToken -passwordResetExpires -role",
+      "-password  -__v -passwordChangedAt -passwordResetToken -passwordResetExpires -role",
   });
 
   const features = new APIFeatures(baseQuery, safeQuery)

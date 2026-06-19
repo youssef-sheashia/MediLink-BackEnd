@@ -36,11 +36,13 @@ const seed = async () => {
   console.log("🧹 Collections cleared");
 
   // ── 2. SPECIALIZATIONS (Arabic names) ────────────────────────────────────
-  const [cardiology, dermatology, pediatrics] = await Specialization.insertMany([
-    { name: "أمراض القلب والأوعية الدموية", consultationFee: 300 },
-    { name: "الأمراض الجلدية والتناسلية",   consultationFee: 200 },
-    { name: "طب الأطفال وحديثي الولادة",    consultationFee: 150 },
-  ]);
+  const [cardiology, dermatology, pediatrics] = await Specialization.insertMany(
+    [
+      { name: "أمراض القلب والأوعية الدموية", consultationFee: 300 },
+      { name: "الأمراض الجلدية والتناسلية", consultationFee: 200 },
+      { name: "طب الأطفال وحديثي الولادة", consultationFee: 150 },
+    ],
+  );
   console.log("✅ Specializations created");
 
   // ── 3. CLINIC ─────────────────────────────────────────────────────────────
@@ -54,13 +56,28 @@ const seed = async () => {
       appointmentDuration: 25,
       maxAppointmentsPerDay: 10,
       workingDays: [
-        { day: "saturday",    isActive: true,  startTime: "09:00", endTime: "17:00" },
-        { day: "sunday",    isActive: true,  startTime: "09:00", endTime: "17:00" },
-        { day: "monday",  isActive: true,  startTime: "09:00", endTime: "17:00" },
-        { day: "tuesday", isActive: true,  startTime: "09:00", endTime: "17:00" },
-        { day: "wednesday", isActive: true,  startTime: "09:00", endTime: "17:00" },
-        { day: "thursday",   isActive: false, startTime: null,    endTime: null    },
-        { day: "friday",   isActive: false, startTime: null,    endTime: null    },
+        { day: "السبت", isActive: true, startTime: "09:00", endTime: "17:00" },
+        { day: "الاحد", isActive: true, startTime: "09:00", endTime: "17:00" },
+        {
+          day: "الاثنين",
+          isActive: true,
+          startTime: "09:00",
+          endTime: "17:00",
+        },
+        {
+          day: "الثلاثاء",
+          isActive: true,
+          startTime: "09:00",
+          endTime: "17:00",
+        },
+        {
+          day: "الاربعاء",
+          isActive: true,
+          startTime: "09:00",
+          endTime: "17:00",
+        },
+        { day: "الخميس", isActive: false, startTime: null, endTime: null },
+        { day: "الجمعة", isActive: false, startTime: null, endTime: null },
       ],
     },
   });
@@ -120,7 +137,7 @@ const seed = async () => {
       user: doctor1._id,
       specialization: cardiology._id,
       experienceYears: 10,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "09:00",
       endTime: "17:00",
     },
@@ -128,7 +145,7 @@ const seed = async () => {
       user: doctor2._id,
       specialization: dermatology._id,
       experienceYears: 7,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "10:00",
       endTime: "18:00",
     },
@@ -136,7 +153,7 @@ const seed = async () => {
       user: doctor3._id,
       specialization: pediatrics._id,
       experienceYears: 15,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
       startTime: "08:00",
       endTime: "16:00",
     },
@@ -172,16 +189,16 @@ const seed = async () => {
   await Receptionist.insertMany([
     {
       user: rec1._id,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
-      education: "Bachelor of Business Administration",
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
+      education: "بكالوريوس إدارة أعمال",
       status: "active",
       startTime: "08:00",
       endTime: "16:00",
     },
     {
       user: rec2._id,
-      workingDays: ["saturday", "sunday", "monday", "tuesday", "wednesday"],
-      education: "Diploma in Health Administration",
+      workingDays: ["السبت", "الاحد", "الاثنين", "الثلاثاء", "الاربعاء"],
+      education: "دبلوم إدارة المستشفيات",
       status: "active",
       startTime: "12:00",
       endTime: "20:00",
@@ -362,8 +379,18 @@ const seed = async () => {
       doctor: doctor1._id,
       appointment: apt1._id,
       medicines: [
-        { name: "Ventolin",     dose: "1 حبة", frequency: "كل 6 ساعات",  duration: "3 أيام"  },
-        { name: "Paracetamol",  dose: "1 حبة", frequency: "كل 8 ساعات",  duration: "7 أيام"  },
+        {
+          name: "Vontolin",
+          dose: "1 حبة",
+          frequency: "كل 6 ساعات",
+          duration: "3 أيام",
+        },
+        {
+          name: "Paracetamol",
+          dose: "1 حبة",
+          frequency: "كل 8 ساعات",
+          duration: "7 أيام",
+        },
       ],
     },
     {
@@ -371,8 +398,18 @@ const seed = async () => {
       doctor: doctor1._id,
       appointment: apt2._id,
       medicines: [
-        { name: "Amoxicillin",  dose: "1 حبة", frequency: "كل 8 ساعات",  duration: "7 أيام"  },
-        { name: "Ibuprofen",    dose: "1 حبة", frequency: "كل 12 ساعة",  duration: "5 أيام"  },
+        {
+          name: "Amoxicillin",
+          dose: "1 حبة",
+          frequency: "كل 8 ساعات",
+          duration: "7 أيام",
+        },
+        {
+          name: "Ibuprofen",
+          dose: "1 حبة",
+          frequency: "كل 12 ساعة",
+          duration: "5 أيام",
+        },
       ],
     },
     {
@@ -380,7 +417,12 @@ const seed = async () => {
       doctor: doctor2._id,
       appointment: apt3._id,
       medicines: [
-        { name: "Cetirizine",   dose: "1 حبة", frequency: "مرة يومياً",  duration: "14 يوم"  },
+        {
+          name: "Cetirizine",
+          dose: "1 حبة",
+          frequency: "مرة يومياً",
+          duration: "14 يوم",
+        },
       ],
     },
     {
@@ -388,8 +430,18 @@ const seed = async () => {
       doctor: doctor1._id,
       appointment: apt4._id,
       medicines: [
-        { name: "Ventolin",     dose: "1 حبة", frequency: "كل 6 ساعات",  duration: "3 أيام"  },
-        { name: "Paracetamol",  dose: "1 حبة", frequency: "كل 8 ساعات",  duration: "7 أيام"  },
+        {
+          name: "Vontolin",
+          dose: "1 حبة",
+          frequency: "كل 6 ساعات",
+          duration: "3 أيام",
+        },
+        {
+          name: "Paracetamol",
+          dose: "1 حبة",
+          frequency: "كل 8 ساعات",
+          duration: "7 أيام",
+        },
       ],
     },
   ]);
@@ -402,21 +454,21 @@ const seed = async () => {
       doctor: doctor1._id,
       appointment: apt1._id,
       diagnosis: "حساسية شديدة",
-      notes: "سعال شديد واحتقان في الأنف والحنجرة",
+      notes: "ملاحظات: سعال شديد واحتقان في الأنف والحنجرة",
     },
     {
       patient: patient2._id,
       doctor: doctor1._id,
       appointment: apt2._id,
       diagnosis: "التهاب الحلق الحاد",
-      notes: "يحتاج المريض للراحة التامة وشرب السوائل الدافئة",
+      notes: "يحتاج المريض للراحة التامة وشرب السوائل",
     },
     {
       patient: patient3._id,
       doctor: doctor2._id,
       appointment: apt3._id,
       diagnosis: "حساسية جلدية",
-      notes: "تجنب التعرض للمسببات البيئية",
+      notes: "تجنب التعرض للمسببات",
     },
     {
       patient: patient1._id,
@@ -434,43 +486,45 @@ const seed = async () => {
       patient: patient1._id,
       doctor: doctor1._id,
       appointment: apt1._id,
-      stars: 5,
-      comment: "دكتور ممتاز ومتعاون جداً، أنصح به بشدة",
+      stars: 4.5,
+      comment: "دكتور ممتاز، أنصح به بشدة!",
     },
     {
       patient: patient2._id,
       doctor: doctor1._id,
       appointment: apt2._id,
-      stars: 4,
-      comment: "تجربة جيدة جداً، الدكتور محترف ودقيق في التشخيص",
+      stars: 5,
+      comment: "محترف جداً ومهتم بالمريض.",
     },
     {
       patient: patient3._id,
       doctor: doctor2._id,
       appointment: apt3._id,
-      stars: 5,
-      comment: "الدكتورة متميزة ومهتمة بالمريض بشكل كبير",
+      stars: 4,
+      comment: "تجربة جيدة بشكل عام.",
     },
   ]);
   console.log("✅ Reviews created");
 
   // ── SUMMARY ───────────────────────────────────────────────────────────────
   console.log("\n🎉 Database seeded successfully!\n");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("🔐 All passwords → Test@1234");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("👤 Admin       → 01000000000  (توفيق عبدالله)");
-  console.log("👨‍⚕️ Doctor 1    → 01011111111  (أحمد الألفي    - قلب)");
-  console.log("👩‍⚕️ Doctor 2    → 01022222222  (أماني العطار   - جلدية)");
-  console.log("👨‍⚕️ Doctor 3    → 01033333333  (يمان علاء      - أطفال)");
-  console.log("🗂️  Recep 1     → 01044444444  (نور طارق)");
-  console.log("🗂️  Recep 2     → 01055555555  (عمر يوسف)");
-  console.log("🧑‍🤝‍🧑 Patient 1  → 01066666666  (محمد حسين  - له زيارتان مكتملتان)");
-  console.log("🧑‍🤝‍🧑 Patient 2  → 01077777777  (مروة خالد)");
-  console.log("🧑‍🤝‍🧑 Patient 3  → 01088888888  (نور باسم)");
-  console.log("🧑‍🤝‍🧑 Patient 4  → 01099999999  (علي يوسف)");
-  console.log("🧑‍🤝‍🧑 Patient 5  → 01111111111  (سلوى حمدي)");
-  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("🔐 All passwords: Test@1234");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("👤 Admin   → phone: 01000000000");
+  console.log("👨‍⚕️ Doctor1  → phone: 01011111111  (أمراض القلب)");
+  console.log("👩‍⚕️ Doctor2  → phone: 01022222222  (الأمراض الجلدية)");
+  console.log("👨‍⚕️ Doctor3  → phone: 01033333333  (طب الأطفال)");
+  console.log("🗂️  Recep1   → phone: 01044444444");
+  console.log("🗂️  Recep2   → phone: 01055555555");
+  console.log(
+    "🧑‍🤝‍🧑 Patient1 → phone: 01066666666  (has 2 completed appointments)",
+  );
+  console.log("🧑‍🤝‍🧑 Patient2 → phone: 01077777777");
+  console.log("🧑‍🤝‍🧑 Patient3 → phone: 01088888888");
+  console.log("🧑‍🤝‍🧑 Patient4 → phone: 01099999999");
+  console.log("🧑‍🤝‍🧑 Patient5 → phone: 01111111111");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
   process.exit(0);
 };

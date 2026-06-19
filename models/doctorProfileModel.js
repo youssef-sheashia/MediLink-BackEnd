@@ -17,27 +17,18 @@ const doctorProfileSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    averageRating: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 5,
-    },
-    totalRatings: {
-      type: Number,
-      default: 0,
-    },
-
     workingDays: [
       {
         type: String,
-        enum: [ "sunday",
-            "monday",
-            "tuesday",
-            "wednesday",
-            "thursday",
-            "friday",
-            "saturday",],
+        enum: [
+          "السبت",
+          "الاحد",
+          "الاثنين",
+          "الثلاثاء",
+          "الاربعاء",
+          "الخميس",
+          "الجمعة",
+        ],
       },
     ],
     startTime: String,
@@ -56,7 +47,7 @@ const doctorProfileSchema = new mongoose.Schema(
       default: 0,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 doctorProfileSchema.pre(/^find/, function () {

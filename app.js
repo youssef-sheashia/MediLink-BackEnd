@@ -21,14 +21,15 @@ import prescriptionRouter from "./routes/prescriptionRoute.js";
 import medicalReportRouter from "./routes/medicalReportRoute.js";
 import reviewRouter from "./routes/reviewRoute.js";
 // import ratingRouter from "./routes/ratingRoutes.js";
-
+//
 export const app = express();
 app.use(helmet());
 app.use(cors());
+app.set("trust proxy", 1);
 app.use(
   "/api",
   rateLimit({
-    max: 100,
+    max: 1000,
     windowMs: 60 * 60 * 1000,
     message: "Too many requests from this IP, please try again later.",
   }),
@@ -56,7 +57,7 @@ app.use("/api/v1/patient", patientRouter);
 app.use("/api/v1/appointments", appointmentRouter);
 app.use("/api/v1/prescriptions", prescriptionRouter);
 app.use("/api/v1/medicalReports", medicalReportRouter);
-app.use("/api/v1/reviews",reviewRouter);
+app.use("/api/v1/reviews", reviewRouter);
 
 // app.use("/api/v1/ratings", ratingRouter);
 /////handel invalid routes and must be after all midlleware

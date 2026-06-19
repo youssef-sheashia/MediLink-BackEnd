@@ -187,6 +187,8 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
         "user.photo": 1,
         "user.gender": 1,
         "user.birthDate": 1,
+        "user._id": 1,
+        "user.active": 1,
       },
     },
     { $sort: { _id: 1 } },
@@ -208,7 +210,7 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
 });
 
 export const getDoctor = catchAsync(async (req, res, next) => {
-  const doctor = await DoctorProfile.findOne({ _id: req.params.id });
+  const doctor = await DoctorProfile.findOne({ user: req.params.id });
 
   if (!doctor) return next(new AppError("doctor not found", 404));
 
@@ -340,6 +342,7 @@ export const searchUserByPhone = catchAsync(async (req, res, next) => {
 
 export const getAvailableSlots = catchAsync(async (req, res, next) => {
   const doctorId = req.params.id;
+  console.log("Getting available slots for doctor ID:", doctorId);
 
   const doctor = await DoctorProfile.findOne({ user: doctorId });
   if (!doctor) return next(new AppError("Doctor not found", 404));
@@ -399,17 +402,3 @@ export const getAvailableSlots = catchAsync(async (req, res, next) => {
     data: { slots: result },
   });
 });
-// response
-// {
-//   "status": "success",
-//   "data": {
-//     "slots": [
-//       { "date": "2026-04-12", "day": "الجمعة",  "availableSlots": ["09:30","10:00","10:30","11:00","01:00","02:30","03:00"] },
-//       { "date": "2026-04-13", "day": "السبت",   "availableSlots": ["09:30","10:30","11:30","12:00","12:30","01:00","02:00","02:30","03:00"] },
-//       { "date": "2026-04-15", "day": "الاثنين", "availableSlots": ["10:00","11:00","12:00","01:00"] },
-//       { "date": "2026-04-16", "day": "الثلاثاء","availableSlots": ["09:30","10:30","11:30"] },
-//       { "date": "2026-04-17", "day": "الاربعاء","availableSlots": ["09:30","10:00"] },
-//       { "date": "2026-04-18", "day": "الخميس",  "availableSlots": ["09:30","10:00","10:30"] }
-//     ]
-//   }
-// }
