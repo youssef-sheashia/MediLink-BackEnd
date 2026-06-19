@@ -489,7 +489,7 @@ const seed = async () => {
       stars: 4.5,
       comment: "دكتور ممتاز، أنصح به بشدة!",
     },
-    {
+    Review.create({
       patient: patient2._id,
       doctor: doctor1._id,
       appointment: apt2._id,
@@ -502,7 +502,7 @@ const seed = async () => {
       appointment: apt3._id,
       stars: 4,
       comment: "تجربة جيدة بشكل عام.",
-    },
+    }),
   ]);
   console.log("✅ Reviews created");
 
