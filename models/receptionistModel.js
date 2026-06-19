@@ -41,7 +41,7 @@ ReceptionistSchema.pre(/^find/, function () {
   this.populate({
     path: `user`,
     select:
-      "-__v -_id -passwordChangedAt -passwordResetExpires -passwordResetToken",
+      "-__v _id -passwordChangedAt -passwordResetExpires -passwordResetToken",
   });
 });
 const Receptionist = mongoose.model("Receptionist", ReceptionistSchema);
