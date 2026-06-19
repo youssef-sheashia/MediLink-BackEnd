@@ -37,13 +37,13 @@ const ReceptionistSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-ReceptionistSchema.pre(/^find/, function () {
-  this.populate({
-    path: `user`,
-    select:
-      "-__v -_id -passwordChangedAt -passwordResetExpires -passwordResetToken",
-  });
-});
+// ReceptionistSchema.pre(/^find/, function () {
+//   this.populate({
+//     path: `user`,
+//     select:
+//       "-__v -_id -passwordChangedAt -passwordResetExpires -passwordResetToken",
+//   });
+// });
 const Receptionist = mongoose.model("Receptionist", ReceptionistSchema);
 
 export default Receptionist;

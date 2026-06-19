@@ -4,7 +4,7 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
 import User from "../models/userModel.js";
 export const getMyAppointments = catchAsync(async (req, res, next) => {
-  const { date, startDate, endDate, month, year } = req.query;
+  const { date, startDate, endDate, month, year } = req.body;
 
   let filter = { doctor: req.user._id };
 
@@ -112,7 +112,6 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
 export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next) => {
   const patientId = req.user._id;
   const { search, page = 1, limit = 10 } = req.query;
-
   const appointments = await Appointment.aggregate([
     // 1. only this patient's appointments
     { $match: { patient: new mongoose.Types.ObjectId(patientId) } },

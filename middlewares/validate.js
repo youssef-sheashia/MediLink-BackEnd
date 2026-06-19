@@ -17,6 +17,7 @@ export const validate = (schema) => (req, res, next) => {
 };
 export const validateQuery = (schema) => (req, res, next) => {
   const result = schema.safeParse(req.query ?? {});
+  console.log(result);
   if (!result.success) {
     const messages = result.error.issues
       .map((issue) => {
@@ -26,7 +27,7 @@ export const validateQuery = (schema) => (req, res, next) => {
       .join(", ");
     return next(new AppError(messages, 400));
   }
-  req.query = result.data;
+  req.body = result.data;
   next();
 };
 export const validateIdParams = (req,res,next)=>{

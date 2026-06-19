@@ -10,20 +10,12 @@ import {
   getReceptionist,
   deleteReceptionist,
 } from "../controllers/receptionistController.js";
+import {receptionistUpdateSchema} from '../validationSchema/receptioniestSchema.Validation.js'
 const receptionistRouter = express.Router();
 
 receptionistRouter.use(authenticate, restrictTo("admin"));
-receptionistRouter.post(
-  "/",
-  validate(createreceptionistSchema),
-  createReceptionist,
-);
-
 receptionistRouter.get("/", getAllReceptionist);
-
-receptionistRouter
-  .route("/:id")
-  .patch(updateReceptionist)
-  .delete(deleteReceptionist)
-  .get(getReceptionist);
+receptionistRouter.post("/",validate(createreceptionistSchema),createReceptionist);
+receptionistRouter.route("/:id").delete(deleteReceptionist).get(getReceptionist);
+receptionistRouter.patch("/:id",validate(receptionistUpdateSchema),updateReceptionist);
 export default receptionistRouter;
