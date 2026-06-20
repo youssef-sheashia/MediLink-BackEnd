@@ -9,8 +9,8 @@ import {
 } from "../controllers/prescriptionController.js";
 
 const router = express.Router();
-router.use(authenticate, restrictTo("doctor"));
-router.post("/", validate(createPrescriptionSchema), createPrescription);
-router.get("/:patientId", getPrescriptionsByPatient);
+router.use(authenticate);
+router.post("/", restrictTo("doctor"),validate(createPrescriptionSchema), createPrescription);
+router.get("/:patientId", restrictTo("doctor","patient"),getPrescriptionsByPatient);
 
 export default router;

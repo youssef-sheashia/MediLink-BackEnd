@@ -9,9 +9,9 @@ import {
 } from "../controllers/medicalReportController.js";
 
 const router = express.Router();
-router.use(authenticate, restrictTo("doctor"));
+router.use(authenticate);
 
-router.get("/:patientId", getMedicalReportsForPatient);
-router.post("/", validate(createMedicalReportSchema), createMedicalReport);
+router.get("/:patientId",restrictTo("doctor","patient"),getMedicalReportsForPatient);
+router.post("/", restrictTo("doctor"),validate(createMedicalReportSchema), createMedicalReport);
 
 export default router;

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
 import User from "../models/userModel.js";
+import AppError from "../utils/appError.js";
 export const getMyAppointments = catchAsync(async (req, res, next) => {
   const { date, startDate, endDate, month, year } = req.body;
 
@@ -110,9 +111,9 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
 
 
 export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next) => {
-  const patientId = req.user._id; // from JWT — never trust frontend for this
+  const patientId = req.user._id;
   const { search, page = 1, limit = 10 } = req.query;
-
+  if(!mongoose.Types.ObjectId.isValid(patientId)) return next(new AppError("Invalid id",400));
   const appointments = await Appointment.aggregate([
     {
       $match: {
