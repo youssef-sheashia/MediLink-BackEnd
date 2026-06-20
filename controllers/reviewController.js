@@ -39,7 +39,7 @@ export const createReview = catchAsync(async (req, res, next) => {
 export const getDoctorReviews = catchAsync(async (req, res, next) => {
   const { doctorId } = req.params;
   const { page = 1, limit = 10 } = req.query;
-
+  if(!mongoose.Types.ObjectId.isValid(doctorId)) return next(new AppError("Invalid id",400));
   const reviews = await Review.find({ doctor: doctorId })
     .populate("patient", "firstName lastName photo")
     .sort({ createdAt: -1 })

@@ -40,7 +40,7 @@ userRouter.patch("/resetPassword", validate(resetPasswordSchema),resetPassword);
 // Users
 userRouter.use(authenticate);
 userRouter.get("/me", getMyProfile);
-userRouter.patch(//* we should edit it to update all data otherwise password so i think to make four route for each one because each one has its own data
+userRouter.patch(
   "/updateMe",
   uploadSingleImage("photo"),
   uploadSingleToImageKit("users"),
