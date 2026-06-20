@@ -30,7 +30,12 @@ const appointmentSchema = new mongoose.Schema(
       type: String,
       enum: ["patient", "doctor", "receptionist"],
     },
-    notes: String,         
+    notes: String,
+    reason: {
+      type:String,
+      trim:true,
+      defalut:""
+    }
   },
   { timestamps: true }
 );

@@ -5,7 +5,7 @@ import Mongoose from "mongoose";
 
 process.on("uncaughtException", (err) => {
   console.log("unhandled exception 🐦‍🔥: server shutting down");
-  console.log(err.name, err.message);
+  console.error(err);
   process.exit(1);
 });
 

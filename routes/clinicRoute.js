@@ -7,9 +7,9 @@ import { getClinicInformations, updateClinicInformations ,updateClinicSchedule} 
 
 const clinicRouter = express.Router();
 
+clinicRouter.get("/informations",getClinicInformations);
 clinicRouter.use(authenticate, restrictTo("admin"));
 // informations routes
-clinicRouter.get("/informations",getClinicInformations);
 clinicRouter.patch("/informations",validate(ClinicInformationsSchema),updateClinicInformations);
 clinicRouter.patch("/schedule",validate(updateScheduleSchema),updateClinicSchedule);
 export default clinicRouter;

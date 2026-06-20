@@ -189,7 +189,8 @@ export const specializationSchema = z.object({
       required_error: "consultation fee is required",
       invalid_type_error: "fee must be a number",
     })
-    .min(0, "fee cannot be negative"),
+    .min(0, "fee cannot be negative")
+    .max(1000,"fee cannot be bigger than one thousouds"),
 });
 // validators/doctorValidator.js
 
@@ -727,4 +728,108 @@ export const appointmentQuerySchema = z
       return isDay + isWeek + isMonth === 1; // exactly one view
     },
     { message: "provide only one view type at a time: day, week, or month" },
+  );
+
+export const bookAppointmentSchema = z.object({
+  doctorId: z
+    .string({ required_error: "doctor id is required" })
+    .regex(/^[a-f\d]{24}$/i, "invalid doctor id"),
+
+  date: z
+    .string({ required_error: "date is required" })
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: "invalid date format, use YYYY-MM-DD",
+    })
+    .refine((val) => new Date(val) >= new Date(new Date().setHours(0,0,0,0)), {
+      message: "date cannot be in the past",
+    }),
+
+  slotTime: z
+    .string({ required_error: "slot time is required" })
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "slot time must be in HH:MM format"),
+
+  reason: z
+    .string({ required_error: "reason is required" })
+    .trim()
+    .min(3, "reason must be at least 3 characters")
+    .max(300, "reason must be at most 300 characters"),
+});
+export const bookAppointmentSchemaByRecption = z.object({
+  doctorId: z
+    .string({ required_error: "doctor id is required" })
+    .regex(/^[a-f\d]{24}$/i, "invalid doctor id"),
+
+  date: z
+    .string({ required_error: "date is required" })
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: "invalid date format, use YYYY-MM-DD",
+    })
+    .refine((val) => new Date(val) >= new Date(new Date().setHours(0,0,0,0)), {
+      message: "date cannot be in the past",
+    }),
+
+  slotTime: z
+    .string({ required_error: "slot time is required" })
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "slot time must be in HH:MM format"),
+
+  firstName: z
+    .string({ required_error: "first name is required" })
+    .min(2, "first name must be at least 2 characters")
+    .max(20, "first name must be less than 20 characters"),
+
+  lastName: z
+    .string({ required_error: "last name is required" })
+    .min(2, "last name must be at least 2 characters")
+    .max(20, "last name must be less than 20 characters"),
+  phone: egyptianPhone,
+      gender: z.enum(["male", "female"], {
+      required_error: "Gender is required",
+      invalid_type_error: "Gender must be 'male' or 'female'",
+    }),
+    day: z
+      .number({
+        required_error: "day is required",
+        invalid_type_error: "day must be a number",
+      })
+      .int()
+      .min(1, "day must be between 1 and 31")
+      .max(31, "day must be between 1 and 31"),
+
+    month: z
+      .number({
+        required_error: "month is required",
+        invalid_type_error: "month must be a number",
+      })
+      .int()
+      .min(1, "month must be between 1 and 12")
+      .max(12, "month must be between 1 and 12"),
+
+    year: z
+      .number({
+        required_error: "year is required",
+        invalid_type_error: "year must be a number",
+      })
+      .int()
+      .min(1900, "year must be after 1900")
+      .max(new Date().getFullYear(), "year cannot be in the future")
+    })
+    .refine(
+    (data) => {
+      const date = new Date(data.year, data.month - 1, data.day);
+      return (
+        date.getFullYear() === data.year &&
+        date.getMonth() === data.month - 1 &&
+        date.getDate() === data.day
+      );
+    },
+    { message: "invalid birth date", path: ["day"] },
+  )
+  .refine(
+    (data) => {
+      const birthDate = new Date(data.year, data.month - 1, data.day);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      return age >= 1 && age <= 120;
+    },
+    { message: "age must be between 1 and 120 years", path: ["year"] },
   );

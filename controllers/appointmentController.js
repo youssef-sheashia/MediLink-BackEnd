@@ -2,6 +2,9 @@ import catchAsync from "../utils/catchAsync.js";
 import mongoose from "mongoose";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
+import Specialization from "../models/specializationModel.js";
+import DoctorProfile from "../models/doctorProfileModel.js";
+import Clinic from "../models/clinicModel.js"
 import User from "../models/userModel.js";
 import AppError from "../utils/appError.js";
 export const getMyAppointments = catchAsync(async (req, res, next) => {
@@ -109,15 +112,17 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   });
 });
 
-export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next) => {
-  const patientId = req.user._id;
-  const { search, page = 1, limit = 10 } = req.query;
-  if(!mongoose.Types.ObjectId.isValid(patientId)) return next(new AppError("Invalid id",400));
-  const appointments = await Appointment.aggregate([
-      { 
+export const getBookedAppointmentsForPatient = catchAsync(
+  async (req, res, next) => {
+    const patientId = req.user._id;
+    const { search, page = 1, limit = 10 } = req.query;
+    if (!mongoose.Types.ObjectId.isValid(patientId))
+      return next(new AppError("Invalid id", 400));
+    const appointments = await Appointment.aggregate([
+      {
         $match: {
           patient: new mongoose.Types.ObjectId(patientId),
-        }
+        },
       },
       {
         $lookup: {
@@ -223,3 +228,165 @@ export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next)
     });
   },
 );
+
+export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
+  const patientId = req.user.id;
+  const { doctorId, date, slotTime, reason } = req.body;
+
+  const patient = await User.findOne({_id:patientId,role:"patient"});
+  if (!patient) return next(new AppError("patient not found", 404));
+  const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
+  if (!doctor) return next(new AppError("doctor not found", 404));
+  // is doctor has avaliable in this time 
+  const isAvaliable = await isDoctorAvailable(doctorId,date,slotTime);
+  if (!isAvaliable) return next(new AppError("doctor isn't available in this time", 400));
+  const specialization = await getDoctorSpecialization(doctorId);
+  if (!specialization)
+    return next(new AppError("doctor has no specialization assigned", 400));
+
+  const newAppointment = await Appointment.create({
+    patient: patientId,
+    doctor: doctorId,
+    date,
+    slotTime,
+    fees: specialization.consultationFee,
+    reason,
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: { appointment: newAppointment },
+  });
+});
+const getDoctorSpecialization = async (doctorId) => {
+  const result = await DoctorProfile.aggregate([
+    {
+      $match: {
+        user: new mongoose.Types.ObjectId(doctorId),
+      },
+    },
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "specialization", // ObjectId in doctorprofiles
+        foreignField: "_id", // _id in specializations
+        as: "specialization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$specialization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        specializationId: "$specialization._id",
+        specializationName: "$specialization.name",
+        consultationFee: "$specialization.consultationFee",
+      },
+    },
+  ]);
+  console.log(result[0]);
+  return result[0] ?? null;
+};
+async function isDoctorAvailable(doctorId, date, slotTime) {
+
+  // ── GET CLINIC DURATION FIRST ──────────────────────────────────────────────
+  const clinic = await Clinic.findOne({}, { "schedule.appointmentDuration": 1 });
+  const duration = clinic?.schedule?.appointmentDuration ?? 25; // default 25 min
+
+  // ── CONVERT SLOTTIME TO MINUTES ────────────────────────────────────────────
+  const toMinutes = (time) => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const toTimeString = (minutes) => {
+    const h = Math.floor(minutes / 60).toString().padStart(2, "0");
+    const m = (minutes % 60).toString().padStart(2, "0");
+    return `${h}:${m}`;
+  };
+
+  const slotMinutes = toMinutes(slotTime);
+
+  // ── CALCULATE CONFLICT RANGE ───────────────────────────────────────────────
+  // example: slotTime = "09:25", duration = 25 min
+  // any existing appointment between "09:00" and "09:49" conflicts
+  // because:
+  //   "09:00" appointment ends at "09:25" → conflicts with "09:25"
+  //   "09:25" appointment ends at "09:50" → conflicts with "09:25"
+  //   "09:49" appointment ends at "10:14" → conflicts with "09:25"
+  //   "09:50" appointment starts after our slot ends → no conflict
+
+  const rangeStart = toTimeString(slotMinutes - (duration - 1)); // "09:01"
+  const rangeEnd   = toTimeString(slotMinutes + (duration - 1)); // "09:49"
+
+  // ── CHECK 1 — slot conflict with range ────────────────────────────────────
+  // get all appointments for this doctor on this date (not cancelled)
+  const appointments = await Appointment.find({
+    doctor: new mongoose.Types.ObjectId(doctorId),
+    date: new Date(date),
+    status: { $ne: "ملغى" },
+  }).select("slotTime");
+
+  // check in JS — convert each stored slotTime to minutes and compare
+  const hasConflict = appointments.some((apt) => {
+    const aptMinutes = toMinutes(apt.slotTime);
+    return aptMinutes >= toMinutes(rangeStart) && aptMinutes <= toMinutes(rangeEnd);
+    // any existing appointment that falls within our conflict range
+  });
+
+  if (hasConflict) return false;
+    console.log("check2 valid")
+
+  // ── CHECK 2 — is this day within doctor's working days? ───────────────────
+  const doctorProfile = await DoctorProfile.findOne({
+    user: new mongoose.Types.ObjectId(doctorId),
+  });
+
+  if (!doctorProfile) return false;
+
+const dayNames = ["الاحد","الاثنين","الثلاثاء","الاربعاء","الخميس","الجمعة","السبت"];
+
+const dayName = dayNames[new Date(date).getDay()];
+if (!doctorProfile.workingDays.includes(dayName)) return false;
+  console.log("check2 valid")
+  // ── CHECK 3 — is slotTime within doctor's working hours? ──────────────────
+  const startMinutes = toMinutes(doctorProfile.startTime);
+  const endMinutes   = toMinutes(doctorProfile.endTime);
+
+  if (slotMinutes < startMinutes || slotMinutes >= endMinutes) return false;
+
+  return true;
+}
+export const bookAppointmentByReceptionist = catchAsync(async (req,res,next)=>{
+  const { doctorId, date, slotTime, firstName,lastName,phone,gender,day,month,year } = req.body;
+
+  const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
+  if (!doctor) return next(new AppError("doctor not found", 404));
+  // is doctor has avaliable in this time 
+  const isAvaliable = await isDoctorAvailable(doctorId,date,slotTime);
+  if (!isAvaliable) return next(new AppError("doctor isn't available in this time", 400));
+  const specialization = await getDoctorSpecialization(doctorId);
+  if (!specialization)
+    return next(new AppError("doctor has no specialization assigned", 400));
+  const birthDate = new Date(year, month - 1, day);
+  const isTherePatient = await User.findOne({phone});
+  if(isTherePatient) return next(new AppError("this phone has already account",400));
+  let newPatient = await User.create({firstName,lastName,phone,gender,birthDate,role:"patient",password:"Test@1234"});
+  const newAppointment = await Appointment.create({
+    patient: newPatient.id,
+    doctor: doctorId,
+    date,
+    slotTime,
+    fees: specialization.consultationFee,
+    reason:"",
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: { appointment: newAppointment },
+  });
+});
