@@ -31,7 +31,7 @@ export const receptionistUpdateSchema = z
       .refine((val) => !isNaN(Date.parse(val)), "birthDate must be a valid date")
       .refine((val) => new Date(val) < new Date(), "birthDate must be in the past")
       .optional(),
-
+    notes:z.string().optional(),
     photo: z.string().url("Please provide a valid image URL").optional(),
     
     active: z.boolean().optional(),

@@ -45,6 +45,11 @@ const userSchema = new Mongoose.Schema({
     enum: ["patient", "admin", "doctor", "receptionist"],
     default: "patient",
   },
+  notes:{
+    type:String,
+    trim:true,
+    default:""
+  },
   password: {
     type: String,
     required: [true, "the password is require"],

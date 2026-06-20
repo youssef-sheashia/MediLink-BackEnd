@@ -111,6 +111,7 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
     "birthDate",
     "photo",
     "active",
+    "notes"
   ];
   const receptionistFields = [
     "education",

@@ -216,7 +216,8 @@ export const createDoctorSchema = z
         /^01[0125][0-9]{8}$/,
         "phone must be a valid Egyptian number (e.g. 01012345678)",
       ),
-
+    notes:z
+      .string().optional(),
     password: z.string().superRefine((val, ctx) => {
       if (val.length < 8) {
         ctx.addIssue({
@@ -344,6 +345,7 @@ export const updateDoctorSchema = z
       .regex(/^01[0125][0-9]{8}$/, "phone must be a valid Egyptian number")
       .optional(),
     gender: z.enum(["male", "female"]).optional(),
+    notes:z.string().optional(),
     birthDate: z
       .string()
       .refine(
@@ -520,7 +522,7 @@ export const createreceptionistSchema = z
       .min(2, "last name must be at least 2 characters")
       .max(50, "last name must be at most 50 characters")
       .trim(),
-
+    notes:z.string().optional(),
     phone: z
       .string({ required_error: "phone is required" })
       .regex(
