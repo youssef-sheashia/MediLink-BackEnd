@@ -354,7 +354,7 @@ export const searchUserByPhone = catchAsync(async (req, res, next) => {
 export const getAvailableSlots = catchAsync(async (req, res, next) => {
   const doctorId = req.params.id;
   console.log("Getting available slots for doctor ID:", doctorId);
-
+  if(mongoose.Types.ObjectId.isValid(doctorId)) return next(new App)
   const doctor = await DoctorProfile.findOne({ user: doctorId });
   if (!doctor) return next(new AppError("Doctor not found", 404));
 
