@@ -6,11 +6,18 @@ import { createPrescriptionSchema } from "../validationSchema/prescription.Valid
 import {
   createPrescription,
   getPrescriptionsByPatient,
+  getMyPrescriptions,
 } from "../controllers/prescriptionController.js";
 
 const router = express.Router();
-router.use(authenticate);
-router.post("/", restrictTo("doctor"),validate(createPrescriptionSchema), createPrescription);
-router.get("/:patientId", restrictTo("doctor","patient"),getPrescriptionsByPatient);
+router.get(
+  "/my-prescriptions",
+  authenticate,
+  restrictTo("patient"),
+  getMyPrescriptions,
+);
+router.use(authenticate, restrictTo("doctor"));
+router.post("/", validate(createPrescriptionSchema), createPrescription);
+router.get("/:patientId", getPrescriptionsByPatient);
 
 export default router;
