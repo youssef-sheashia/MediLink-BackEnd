@@ -17,29 +17,212 @@ export const createPrescription = catchAsync(async (req, res, next) => {
   });
 });
 
+// export const getPrescriptionsByPatient = catchAsync(async (req, res, next) => {
+//   const { patientId } = req.params;
+
+//   if (!mongoose.Types.ObjectId.isValid(patientId)) {
+//     return next(new AppError("invalid patient id", 400));
+//   }
+
+//   const patientExists = await User.exists({
+//     _id: patientId,
+//     role: "patient",
+//   });
+
+//   if (!patientExists) {
+//     return next(new AppError("no patient found with this id", 404));
+//   }
+
+//   const prescriptions = await Prescription.find({ patient: patientId });
+
+//   res.status(200).json({
+//     status: "success",
+//     results: prescriptions.length,
+//     data: {
+//       prescriptions,
+//     },
+//   });
+// });
+// ─── Doctor: get prescriptions by patient id ──────────────────────────────────
+
+/**
+ * GET /api/v1/prescriptions/patient/:patientId
+ * Doctor only — view any patient's prescriptions by their user id.
+ */
 export const getPrescriptionsByPatient = catchAsync(async (req, res, next) => {
   const { patientId } = req.params;
 
-  if (!mongoose.Types.ObjectId.isValid(patientId)) {
+  if (!mongoose.Types.ObjectId.isValid(patientId))
     return next(new AppError("invalid patient id", 400));
-  }
 
-  const patientExists = await User.exists({
-    _id: patientId,
+  const patient = await User.collection.findOne({
+    _id: new mongoose.Types.ObjectId(patientId),
     role: "patient",
   });
 
-  if (!patientExists) {
-    return next(new AppError("no patient found with this id", 404));
-  }
+  if (!patient) return next(new AppError("no patient found with this id", 404));
 
-  const prescriptions = await Prescription.find({ patient: patientId });
+  if (!patient.active)
+    return next(new AppError("this patient account is deactivated", 403));
+
+  const prescriptions = await Prescription.aggregate([
+    // 1) match this patient's prescriptions
+    {
+      $match: { patient: new mongoose.Types.ObjectId(patientId) },
+    },
+
+    // 2) join with users to get doctor name and photo
+    {
+      $lookup: {
+        from: "users",
+        localField: "doctor",
+        foreignField: "_id",
+        as: "doctor",
+      },
+    },
+    {
+      $unwind: {
+        path: "$doctor",
+        preserveNullAndEmptyArrays: true, // ← correct option name
+      },
+    },
+
+    // 3) join with doctorprofiles using doctor._id
+    {
+      $lookup: {
+        from: "doctorprofiles",
+        localField: "doctor._id",
+        foreignField: "user",
+        as: "doctorProfile",
+      },
+    },
+    {
+      $unwind: {
+        path: "$doctorProfile",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 4) join with specializations
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "doctorProfile.specialization",
+        foreignField: "_id",
+        as: "specialization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$specialization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 5) shape the response
+    {
+      $project: {
+        medicines: 1,
+        createdAt: 1,
+        appointment: 1,
+        "doctor._id": 1,
+        "doctor.firstName": 1,
+        "doctor.lastName": 1,
+        "doctor.photo": 1,
+        "specialization.name": 1,
+      },
+    },
+
+    { $sort: { createdAt: -1 } },
+  ]);
 
   res.status(200).json({
     status: "success",
     results: prescriptions.length,
-    data: {
-      prescriptions,
+    data: { prescriptions },
+  });
+});
+// ─── Patient: get own prescriptions ──────────────────────────────────────────
+
+/**
+ * GET /api/v1/prescriptions/my
+ * Patient only — view their own prescriptions.
+ */
+export const getMyPrescriptions = catchAsync(async (req, res, next) => {
+  const prescriptions = await Prescription.aggregate([
+    // 1) match this patient's prescriptions
+    {
+      $match: { patient: new mongoose.Types.ObjectId(req.user._id) },
     },
+
+    // 2) join with users to get doctor name and photo
+    {
+      $lookup: {
+        from: "users",
+        localField: "doctor",
+        foreignField: "_id",
+        as: "doctor",
+      },
+    },
+    {
+      $unwind: {
+        path: "$doctor",
+        preserveNullAndEmptyArrays: true, // ← correct option name
+      },
+    },
+
+    // 3) join with doctorprofiles using doctor._id
+    {
+      $lookup: {
+        from: "doctorprofiles",
+        localField: "doctor._id",
+        foreignField: "user",
+        as: "doctorProfile",
+      },
+    },
+    {
+      $unwind: {
+        path: "$doctorProfile",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 4) join with specializations
+    {
+      $lookup: {
+        from: "specializations",
+        localField: "doctorProfile.specialization",
+        foreignField: "_id",
+        as: "specialization",
+      },
+    },
+    {
+      $unwind: {
+        path: "$specialization",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+
+    // 5) shape the response
+    {
+      $project: {
+        medicines: 1,
+        createdAt: 1,
+        appointment: 1,
+        "doctor._id": 1,
+        "doctor.firstName": 1,
+        "doctor.lastName": 1,
+        "doctor.photo": 1,
+        "specialization.name": 1,
+      },
+    },
+
+    { $sort: { createdAt: -1 } },
+  ]);
+
+  res.status(200).json({
+    status: "success",
+    results: prescriptions.length,
+    data: { prescriptions },
   });
 });
