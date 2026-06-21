@@ -22,10 +22,10 @@ router.patch(
   uploadMultipleToImageKit("medical-files"),
   completeMyProfile,
 );
-router.get("/:id", restrictTo("admin", "doctor"), getPatientById);
-router.use(restrictTo("admin"));
+router.get("/:id", restrictTo("admin", "doctor","receptionist"), getPatientById);
 
-router.get("/", getAllPatients);
+router.get("/", restrictTo("admin", "receptionist"),getAllPatients);
+router.use(restrictTo("admin"));
 
 router.delete("/deleteMany", deleteManyPatients);
 router.delete("/:id", deletePatient);
