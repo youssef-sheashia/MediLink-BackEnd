@@ -10,7 +10,8 @@ import {
   getAllAppointments,
   bookAppointmentByPatient,
   bookAppointmentByReceptionist,
-  getCurrentPatientForDoctor
+  getCurrentPatientForDoctor,
+  changeAppointmentStatus
 } from "../controllers/appointmentController.js";
 import { uploadMedicalFilesMiddleware } from "../middlewares/multer.js";
 import { uploadMultipleToImageKit } from "../utils/imageKit.js";
@@ -53,4 +54,5 @@ router.get(
   getBookedAppointmentsForPatient,
 );
 router.get("/getCurrentPatientForDoctor/:id",restrictTo("doctor"),getCurrentPatientForDoctor);
+router.patch("/changeStatus/:id",restrictTo("receptionist","doctor"),changeAppointmentStatus);
 export default router;

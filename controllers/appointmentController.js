@@ -511,3 +511,36 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
     data: { appointment: appointment[0] },
   });
 });
+export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return next(new AppError("invalid id", 400));
+
+  const appointment = await Appointment.findById(id);
+  if (!appointment)
+    return next(new AppError("appointment not found", 404));
+
+  const { changeTo } = req.body;
+
+  if (!["قيد الانتظار", "مكتمل", "ملغى"].includes(changeTo))
+    return next(new AppError("invalid status value", 400));
+
+  if (appointment.status === "ملغى")
+    return next(new AppError("cannot change status of a cancelled appointment", 400));
+
+  if (appointment.status === "مكتمل" && changeTo === "قيد الانتظار")
+    return next(new AppError("cannot revert a completed appointment back to pending", 400));
+
+  if (changeTo === "ملغى") {
+    appointment.cancelledBy = req.user.role;
+  }
+
+  appointment.status = changeTo;
+  await appointment.save();
+
+  res.status(200).json({
+    status: "success",
+    data: { appointment },
+  });
+});
