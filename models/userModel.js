@@ -1,6 +1,6 @@
 import Mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import crypto from "node:crypto";
 const userSchema = new Mongoose.Schema({
   firstName: {
     type: String,
