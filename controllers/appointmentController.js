@@ -116,7 +116,7 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
 export const getBookedAppointmentsForPatient = catchAsync(
   async (req, res, next) => {
     const patientId = req.user._id;
-    const { search, page = 1, limit = 10 } = req.query;
+    const { search, page = 1, limit = 50 } = req.query;
     if (!mongoose.Types.ObjectId.isValid(patientId))
       return next(new AppError("Invalid id", 400));
     const appointments = await Appointment.aggregate([
@@ -403,74 +403,77 @@ export const bookAppointmentByReceptionist = catchAsync(
       year,
     } = req.body;
 
-  const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
-  if (!doctor) return next(new AppError("doctor not found", 404));
-  // is doctor has avaliable in this time 
-  const isAvaliable = await isDoctorAvailable(doctorId,date,slotTime);
-  if (!isAvaliable) return next(new AppError("doctor isn't available in this time", 400));
-  const specialization = await getDoctorSpecialization(doctorId);
-  if (!specialization)
-    return next(new AppError("doctor has no specialization assigned", 400));
+    const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
+    if (!doctor) return next(new AppError("doctor not found", 404));
+    // is doctor has avaliable in this time
+    const isAvaliable = await isDoctorAvailable(doctorId, date, slotTime);
+    if (!isAvaliable)
+      return next(new AppError("doctor isn't available in this time", 400));
+    const specialization = await getDoctorSpecialization(doctorId);
+    if (!specialization)
+      return next(new AppError("doctor has no specialization assigned", 400));
 
-  const birthDate = new Date(year, month - 1, day);
-  const isTherePatient = await User.findOne({phone});
-  if(isTherePatient) return next(new AppError("this phone has already account",400));
+    const birthDate = new Date(year, month - 1, day);
+    const isTherePatient = await User.findOne({ phone });
+    if (isTherePatient)
+      return next(new AppError("this phone has already account", 400));
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-  try {
-    let [newPatient] = await User.create(
-      [
-        {
-          firstName,
-          lastName,
-          phone,
-          gender,
-          birthDate,
-          role: "patient",
-          password: "Test@1234",
-        },
-      ],
-      { session },
-    );
+    try {
+      let [newPatient] = await User.create(
+        [
+          {
+            firstName,
+            lastName,
+            phone,
+            gender,
+            birthDate,
+            role: "patient",
+            password: "Test@1234",
+          },
+        ],
+        { session },
+      );
 
-    await PatientProfile.create(
-      [
-        {
-          user: newPatient._id,
-        },
-      ],
-      { session },
-    );
+      await PatientProfile.create(
+        [
+          {
+            user: newPatient._id,
+          },
+        ],
+        { session },
+      );
 
-    const newAppointment = await Appointment.create(
-      [
-        {
-          patient: newPatient._id,
-          doctor: doctorId,
-          date,
-          slotTime,
-          fees: specialization.consultationFee,
-          reason: "",
-        },
-      ],
-      { session },
-    );
+      const newAppointment = await Appointment.create(
+        [
+          {
+            patient: newPatient._id,
+            doctor: doctorId,
+            date,
+            slotTime,
+            fees: specialization.consultationFee,
+            reason: "",
+          },
+        ],
+        { session },
+      );
 
-    await session.commitTransaction();
-    session.endSession();
+      await session.commitTransaction();
+      session.endSession();
 
-    res.status(201).json({
-      status: "success",
-      data: { appointment: newAppointment[0] },
-    });
-  } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
-    return next(err);
-  }
-});
+      res.status(201).json({
+        status: "success",
+        data: { appointment: newAppointment[0] },
+      });
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      return next(err);
+    }
+  },
+);
 export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user.id;
   const { patientId } = req.params.id;
@@ -479,10 +482,10 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
     return next(new AppError("Invalid id", 400));
 
   const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);  
+  todayStart.setHours(0, 0, 0, 0);
 
   const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999); 
+  todayEnd.setHours(23, 59, 59, 999);
 
   const appointment = await Appointment.aggregate([
     {
