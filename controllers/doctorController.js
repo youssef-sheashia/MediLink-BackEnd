@@ -194,6 +194,8 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
         startTime: 1,
         endTime: 1,
         specialization: 1,
+        ratingsAverage: 1,
+        ratingsCount: 1,
         "user.firstName": 1,
         "user.lastName": 1,
         "user.phone": 1,
@@ -271,7 +273,7 @@ export const updateDoctor = catchAsync(async (req, res, next) => {
     const updatedDoctor = await DoctorProfile.findOneAndUpdate(
       { user: req.params.id },
       profileUpdates,
-      { returnDocument: 'after', runValidators: true, session },
+      { returnDocument: "after", runValidators: true, session },
     );
     if (!updatedDoctor) {
       await session.abortTransaction();
