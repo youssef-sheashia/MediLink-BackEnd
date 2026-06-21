@@ -28,9 +28,10 @@ router.get("/", restrictTo("admin", "receptionist"), getAllAppointments);
 router.post(
   "/bookByPatient",
   restrictTo("patient"),
+  uploadMedicalFilesMiddleware,
   validate(bookAppointmentSchema),
-  //   uploadMedicalFilesMiddleware,
-  //   uploadMultipleToImageKit("appointment-medical-files"),
+  uploadMultipleToImageKit("appointment-medical-files"),
+
   bookAppointmentByPatient,
 );
 router.post(
