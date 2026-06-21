@@ -10,7 +10,7 @@ import {
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
 import { validate } from "../middlewares/validate.js";
-import { createDoctorSchema, updateDoctorSchema } from "../utils/validators.js";
+import { createDoctorSchema, updateDoctorSchema } from "../validationSchema/doctor.validation.js";
 const doctorRouter = express.Router();
 
 doctorRouter.get("/", getAllDoctors);
@@ -25,7 +25,7 @@ doctorRouter.post(
   validate(createDoctorSchema),
   createDoctor,
 );
-doctorRouter.patch("/:id", restrictTo("admin"), updateDoctor);
+doctorRouter.patch("/:id", restrictTo("admin"), validate(updateDoctorSchema), updateDoctor);
 doctorRouter.delete("/:id", restrictTo("admin"), deleteDoctor);
 doctorRouter.get("/:id/available-slots",getAvailableSlots);
 export default doctorRouter;

@@ -6,7 +6,6 @@ import client from "../config/redis.js";
 import sendOTP from "../utils/sendOTP.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { egyptianPhone } from "../utils/validators.js";
 import mongoose from "mongoose";
 const createToken = function (id) {
   return jwt.sign({ id }, process.env.JWT_SECRET, {

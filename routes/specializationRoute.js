@@ -2,7 +2,7 @@ import express from "express";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
 import { validate,validateIdParams } from "../middlewares/validate.js";
-import { specializationSchema } from "../utils/validators.js";
+import { specializationSchema } from "../validationSchema/specialization.validation.js";
 import {getAllSpecializations, createSpecialization, updateSpecialization, deleteSpecialization , getDoctorsBySpecialization} from "../controllers/specializationController.js";
 
 

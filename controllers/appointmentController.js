@@ -6,9 +6,10 @@ import Specialization from "../models/specializationModel.js";
 import DoctorProfile from "../models/doctorProfileModel.js";
 import Clinic from "../models/clinicModel.js"
 import User from "../models/userModel.js";
+import PatientProfile from "../models/patientProfileModel.js";
 import AppError from "../utils/appError.js";
 export const getMyAppointments = catchAsync(async (req, res, next) => {
-  const { date, startDate, endDate, month, year } = req.body;
+  const { date, startDate, endDate, month, year } = req.validatedQuery;
 
   let filter = { doctor: req.user._id };
 
@@ -372,21 +373,63 @@ export const bookAppointmentByReceptionist = catchAsync(async (req,res,next)=>{
   const specialization = await getDoctorSpecialization(doctorId);
   if (!specialization)
     return next(new AppError("doctor has no specialization assigned", 400));
+
   const birthDate = new Date(year, month - 1, day);
   const isTherePatient = await User.findOne({phone});
   if(isTherePatient) return next(new AppError("this phone has already account",400));
-  let newPatient = await User.create({firstName,lastName,phone,gender,birthDate,role:"patient",password:"Test@1234"});
-  const newAppointment = await Appointment.create({
-    patient: newPatient.id,
-    doctor: doctorId,
-    date,
-    slotTime,
-    fees: specialization.consultationFee,
-    reason:"",
-  });
 
-  res.status(201).json({
-    status: "success",
-    data: { appointment: newAppointment },
-  });
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    let [newPatient] = await User.create(
+      [
+        {
+          firstName,
+          lastName,
+          phone,
+          gender,
+          birthDate,
+          role: "patient",
+          password: "Test@1234",
+        },
+      ],
+      { session },
+    );
+
+    await PatientProfile.create(
+      [
+        {
+          user: newPatient._id,
+        },
+      ],
+      { session },
+    );
+
+    const newAppointment = await Appointment.create(
+      [
+        {
+          patient: newPatient._id,
+          doctor: doctorId,
+          date,
+          slotTime,
+          fees: specialization.consultationFee,
+          reason: "",
+        },
+      ],
+      { session },
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      status: "success",
+      data: { appointment: newAppointment[0] },
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    return next(err);
+  }
 });

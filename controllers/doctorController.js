@@ -6,6 +6,7 @@ import DoctorProfile from "../models/doctorProfileModel.js";
 import Appointment from "../models/appointmentModel.js";
 import Clinic from "../models/clinicModel.js";
 import flattenAndRespond from "../utils/flattenAndRespond.js";
+import bcrypt from "bcryptjs";
 
 // ============================================================
 // HELPER FUNCTIONS (used only inside this file)
@@ -92,6 +93,8 @@ export const createDoctor = catchAsync(async (req, res, next) => {
   if (existingUser)
     return next(new AppError("phone number already in use", 400));
 
+  const hashedPassword = await bcrypt.hash(password, 12);
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -102,8 +105,7 @@ export const createDoctor = catchAsync(async (req, res, next) => {
           firstName,
           lastName,
           phone,
-          password,
-          confirmPassword,
+          password: hashedPassword,
           gender,
           birthDate,
           role: "doctor",
@@ -262,7 +264,7 @@ export const updateDoctor = catchAsync(async (req, res, next) => {
     const updatedDoctor = await DoctorProfile.findOneAndUpdate(
       { user: req.params.id },
       profileUpdates,
-      { new: true, runValidators: true, session },
+      { returnDocument: 'after', runValidators: true, session },
     );
     if (!updatedDoctor) {
       await session.abortTransaction();
@@ -355,7 +357,9 @@ export const searchUserByPhone = catchAsync(async (req, res, next) => {
 export const getAvailableSlots = catchAsync(async (req, res, next) => {
   const doctorId = req.params.id;
   console.log("Getting available slots for doctor ID:", doctorId);
-  if(mongoose.Types.ObjectId.isValid(doctorId)) return next(new App)
+  if (!mongoose.Types.ObjectId.isValid(doctorId)) {
+    return next(new AppError("Invalid doctor ID", 400));
+  }
   const doctor = await DoctorProfile.findOne({ user: doctorId });
   if (!doctor) return next(new AppError("Doctor not found", 404));
 

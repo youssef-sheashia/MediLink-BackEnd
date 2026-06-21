@@ -17,7 +17,7 @@ import {
   forgetSchema,
   resetPasswordSchema,
   updatePasswordSchema,
-} from "../utils/validators.js";
+} from "../validationSchema/auth.validation.js";
 import {
   getAllUsers,
   getOneUser,

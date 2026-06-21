@@ -1,5 +1,5 @@
 import express from "express";
-import { createMedicalReportSchema } from "../validationSchema/medicalReport.ValidationShema.js";
+import { createMedicalReportSchema } from "../validationSchema/medicalReport.validation.js";
 import { validate } from "../middlewares/validate.js";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";

@@ -5,6 +5,7 @@ import AppError from "../utils/appError.js";
 import User from "../models/userModel.js";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import flattenAndRespond from "../utils/flattenAndRespond.js";
+import bcrypt from "bcryptjs";
 export const createReceptionist = catchAsync(async (req, res, next) => {
   const {
     firstName,
@@ -25,6 +26,8 @@ export const createReceptionist = catchAsync(async (req, res, next) => {
   if (existingUser)
     return next(new AppError("phone number already in use", 400));
 
+  const hashedPassword = await bcrypt.hash(password, 12);
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -35,8 +38,7 @@ export const createReceptionist = catchAsync(async (req, res, next) => {
           firstName,
           lastName,
           phone,
-          password,
-          confirmPassword,
+          password: hashedPassword,
           gender,
           birthDate,
           role: "receptionist",

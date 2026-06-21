@@ -30,5 +30,5 @@ router.get("/", getAllPatients);
 router.delete("/deleteMany", deleteManyPatients);
 router.delete("/:id", deletePatient);
 
-router.patch("/:id/active", changeActiveStatus); // test not work
+router.patch("/:id/active", changeActiveStatus);
 export default router;

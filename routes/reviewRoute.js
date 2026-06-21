@@ -5,11 +5,11 @@ import { createReview, getDoctorReviews, deleteReview } from "../controllers/rev
 
 const router = express.Router();
 
+router.get("/doctor/:doctorId", getDoctorReviews);
+
 router.use(authenticate);
 
 router.post("/", restrictTo("patient"), createReview);
-
-router.get("/doctor/:doctorId", getDoctorReviews);
 
 router.delete("/:id", restrictTo("patient"), deleteReview);
 

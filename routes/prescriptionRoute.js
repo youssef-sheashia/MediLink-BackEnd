@@ -2,7 +2,7 @@ import express from "express";
 import { validate } from "../middlewares/validate.js";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
-import { createPrescriptionSchema } from "../validationSchema/prescription.ValidationSchema.js";
+import { createPrescriptionSchema } from "../validationSchema/prescription.validation.js";
 import {
   createPrescription,
   getPrescriptionsByPatient,

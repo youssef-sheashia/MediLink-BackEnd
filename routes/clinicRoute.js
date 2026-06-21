@@ -2,7 +2,7 @@ import express from "express";
 import authenticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
 import { validate } from "../middlewares/validate.js";
-import { ClinicInformationsSchema,updateScheduleSchema } from "../utils/validators.js";
+import { ClinicInformationsSchema,updateScheduleSchema } from "../validationSchema/clinic.validation.js";
 import { getClinicInformations, updateClinicInformations ,updateClinicSchedule} from "../controllers/clinicController.js";
 
 const clinicRouter = express.Router();

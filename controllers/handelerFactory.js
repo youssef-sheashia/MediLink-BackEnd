@@ -52,7 +52,6 @@ export const getOne = (Model, popOption) =>
 export const getAll = (Model) =>
   catchAsync(async function (req, res, next) {
     const filter = {};
-    if (req.params.tourId) filter.tour = req.params.tourId;
     // EXECUTE QUERY
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()

@@ -1,7 +1,7 @@
 import express from "express";
 import authnticate from "../middlewares/authenticate.js";
 import { restrictTo } from "../controllers/authController.js";
-import { appointmentQuerySchema,bookAppointmentSchema,bookAppointmentSchemaByRecption } from "../utils/validators.js";
+import { appointmentQuerySchema,bookAppointmentSchema,bookAppointmentSchemaByRecption } from "../validationSchema/appointment.validation.js";
 import { validate, validateQuery } from "../middlewares/validate.js";
 import { getMyAppointments,getPatientForDoctor,getBookedAppointmentsForPatient ,getAllAppointments,bookAppointmentByPatient,bookAppointmentByReceptionist} from "../controllers/appointmentController.js";
 const router = express.Router();
