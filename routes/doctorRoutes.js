@@ -27,5 +27,9 @@ doctorRouter.post(
 );
 doctorRouter.patch("/:id", restrictTo("admin"), updateDoctor);
 doctorRouter.delete("/:id", restrictTo("admin"), deleteDoctor);
-doctorRouter.get("/:id/available-slots",getAvailableSlots);
+doctorRouter.get(
+  "/:id/available-slots",
+  restrictTo("patient receptionist"),
+  getAvailableSlots,
+);
 export default doctorRouter;
