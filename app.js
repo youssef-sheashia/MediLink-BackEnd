@@ -29,7 +29,7 @@ app.set("trust proxy", 1);
 app.use(
   "/api",
   rateLimit({
-    max: 1000,
+    max: 10000,
     windowMs: 60 * 60 * 1000,
     message: "Too many requests from this IP, please try again later.",
   }),

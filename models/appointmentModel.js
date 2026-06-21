@@ -17,7 +17,7 @@ const appointmentSchema = new mongoose.Schema(
       required: [true, "appointment must have a date"],
     },
     slotTime: {
-      type: String,        
+      type: String,
       required: [true, "appointment must have a time slot"],
     },
     status: {
@@ -25,25 +25,23 @@ const appointmentSchema = new mongoose.Schema(
       enum: ["قيد الانتظار", "مكتمل", "ملغى"],
       default: "قيد الانتظار",
     },
-    fees: Number,          
+    fees: Number,
     cancelledBy: {
       type: String,
       enum: ["patient", "doctor", "receptionist"],
     },
     notes: String,
     reason: {
-      type:String,
-      trim:true,
-      defalut:""
-    }
+      type: String,
+      trim: true,
+      defalut: "",
+    },
+    medicalFiles: [String],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-appointmentSchema.index(
-  { doctor: 1, date: 1, slotTime: 1 },
-  { unique: true }
-);
+appointmentSchema.index({ doctor: 1, date: 1, slotTime: 1 }, { unique: true });
 appointmentSchema.index({ doctor: 1, date: 1 });
 appointmentSchema.index({ patient: 1, date: 1 });
 

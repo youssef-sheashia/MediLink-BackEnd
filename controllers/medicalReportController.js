@@ -6,9 +6,9 @@ import User from "../models/userModel.js";
 
 export const createMedicalReport = catchAsync(async (req, res, next) => {
   const medicalReport = await MedicalReport.create({
-  ...req.body,
-  doctor: req.user._id  
-});
+    ...req.body,
+    doctor: req.user._id,
+  });
   res.status(201).json({
     status: "success",
     data: {
@@ -44,3 +44,28 @@ export const getMedicalReportsForPatient = catchAsync(
     });
   },
 );
+export const getMyMedicalReports = catchAsync(async (req, res, next) => {
+  const patientId = req.user._id;
+
+  if (!mongoose.Types.ObjectId.isValid(patientId)) {
+    return next(new AppError("invalid patient id", 400));
+  }
+
+  const patientExists = await User.exists({
+    _id: patientId,
+    role: "patient",
+  });
+
+  if (!patientExists) {
+    return next(new AppError("no patient found with this id", 404));
+  }
+
+  const medicalReports = await MedicalReport.find({ patient: patientId });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      medicalReports,
+    },
+  });
+});

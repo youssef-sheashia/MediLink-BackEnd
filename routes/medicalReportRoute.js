@@ -6,12 +6,23 @@ import { restrictTo } from "../controllers/authController.js";
 import {
   getMedicalReportsForPatient,
   createMedicalReport,
+  getMyMedicalReports,
 } from "../controllers/medicalReportController.js";
 
 const router = express.Router();
 router.use(authenticate);
+router.get("/myMedicalReports", restrictTo("patient"), getMyMedicalReports);
 
-router.get("/:patientId",restrictTo("doctor","patient"),getMedicalReportsForPatient);
-router.post("/", restrictTo("doctor"),validate(createMedicalReportSchema), createMedicalReport);
+router.get(
+  "/:patientId",
+  restrictTo("doctor", "patient"),
+  getMedicalReportsForPatient,
+);
+router.post(
+  "/",
+  restrictTo("doctor"),
+  validate(createMedicalReportSchema),
+  createMedicalReport,
+);
 
 export default router;

@@ -4,7 +4,7 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
 import Specialization from "../models/specializationModel.js";
 import DoctorProfile from "../models/doctorProfileModel.js";
-import Clinic from "../models/clinicModel.js"
+import Clinic from "../models/clinicModel.js";
 import User from "../models/userModel.js";
 import PatientProfile from "../models/patientProfileModel.js";
 import AppError from "../utils/appError.js";
@@ -234,17 +234,28 @@ export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
   const patientId = req.user.id;
   const { doctorId, date, slotTime, reason } = req.body;
 
-  const patient = await User.findOne({_id:patientId,role:"patient"});
+  // 1) validate patient
+  const patient = await User.findOne({ _id: patientId, role: "patient" });
   if (!patient) return next(new AppError("patient not found", 404));
+
+  // 2) validate doctor
   const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
   if (!doctor) return next(new AppError("doctor not found", 404));
-  // is doctor has avaliable in this time 
-  const isAvaliable = await isDoctorAvailable(doctorId,date,slotTime);
-  if (!isAvaliable) return next(new AppError("doctor isn't available in this time", 400));
+
+  // 3) check doctor availability
+  const isAvaliable = await isDoctorAvailable(doctorId, date, slotTime);
+  if (!isAvaliable)
+    return next(new AppError("doctor isn't available in this time", 400));
+
+  // 4) get specialization for fees
   const specialization = await getDoctorSpecialization(doctorId);
   if (!specialization)
     return next(new AppError("doctor has no specialization assigned", 400));
 
+  // 5) get uploaded file urls from ImageKit middleware (req.uploadedFiles)
+  const medicalFiles = req.uploadedFiles?.map((f) => f.url) ?? [];
+
+  // 6) create appointment
   const newAppointment = await Appointment.create({
     patient: patientId,
     doctor: doctorId,
@@ -252,6 +263,7 @@ export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
     slotTime,
     fees: specialization.consultationFee,
     reason,
+    medicalFiles,
   });
 
   res.status(201).json({
@@ -293,9 +305,11 @@ const getDoctorSpecialization = async (doctorId) => {
   return result[0] ?? null;
 };
 async function isDoctorAvailable(doctorId, date, slotTime) {
-
   // ── GET CLINIC DURATION FIRST ──────────────────────────────────────────────
-  const clinic = await Clinic.findOne({}, { "schedule.appointmentDuration": 1 });
+  const clinic = await Clinic.findOne(
+    {},
+    { "schedule.appointmentDuration": 1 },
+  );
   const duration = clinic?.schedule?.appointmentDuration ?? 25; // default 25 min
 
   // ── CONVERT SLOTTIME TO MINUTES ────────────────────────────────────────────
@@ -305,7 +319,9 @@ async function isDoctorAvailable(doctorId, date, slotTime) {
   };
 
   const toTimeString = (minutes) => {
-    const h = Math.floor(minutes / 60).toString().padStart(2, "0");
+    const h = Math.floor(minutes / 60)
+      .toString()
+      .padStart(2, "0");
     const m = (minutes % 60).toString().padStart(2, "0");
     return `${h}:${m}`;
   };
@@ -322,7 +338,7 @@ async function isDoctorAvailable(doctorId, date, slotTime) {
   //   "09:50" appointment starts after our slot ends → no conflict
 
   const rangeStart = toTimeString(slotMinutes - (duration - 1)); // "09:01"
-  const rangeEnd   = toTimeString(slotMinutes + (duration - 1)); // "09:49"
+  const rangeEnd = toTimeString(slotMinutes + (duration - 1)); // "09:49"
 
   // ── CHECK 1 — slot conflict with range ────────────────────────────────────
   // get all appointments for this doctor on this date (not cancelled)
@@ -335,12 +351,14 @@ async function isDoctorAvailable(doctorId, date, slotTime) {
   // check in JS — convert each stored slotTime to minutes and compare
   const hasConflict = appointments.some((apt) => {
     const aptMinutes = toMinutes(apt.slotTime);
-    return aptMinutes >= toMinutes(rangeStart) && aptMinutes <= toMinutes(rangeEnd);
+    return (
+      aptMinutes >= toMinutes(rangeStart) && aptMinutes <= toMinutes(rangeEnd)
+    );
     // any existing appointment that falls within our conflict range
   });
 
   if (hasConflict) return false;
-    console.log("check2 valid")
+  console.log("check2 valid");
 
   // ── CHECK 2 — is this day within doctor's working days? ───────────────────
   const doctorProfile = await DoctorProfile.findOne({
@@ -349,21 +367,41 @@ async function isDoctorAvailable(doctorId, date, slotTime) {
 
   if (!doctorProfile) return false;
 
-const dayNames = ["الاحد","الاثنين","الثلاثاء","الاربعاء","الخميس","الجمعة","السبت"];
+  const dayNames = [
+    "الاحد",
+    "الاثنين",
+    "الثلاثاء",
+    "الاربعاء",
+    "الخميس",
+    "الجمعة",
+    "السبت",
+  ];
 
-const dayName = dayNames[new Date(date).getDay()];
-if (!doctorProfile.workingDays.includes(dayName)) return false;
-  console.log("check2 valid")
+  const dayName = dayNames[new Date(date).getDay()];
+  if (!doctorProfile.workingDays.includes(dayName)) return false;
+  console.log("check2 valid");
   // ── CHECK 3 — is slotTime within doctor's working hours? ──────────────────
   const startMinutes = toMinutes(doctorProfile.startTime);
-  const endMinutes   = toMinutes(doctorProfile.endTime);
+  const endMinutes = toMinutes(doctorProfile.endTime);
 
   if (slotMinutes < startMinutes || slotMinutes >= endMinutes) return false;
 
   return true;
 }
-export const bookAppointmentByReceptionist = catchAsync(async (req,res,next)=>{
-  const { doctorId, date, slotTime, firstName,lastName,phone,gender,day,month,year } = req.body;
+export const bookAppointmentByReceptionist = catchAsync(
+  async (req, res, next) => {
+    const {
+      doctorId,
+      date,
+      slotTime,
+      firstName,
+      lastName,
+      phone,
+      gender,
+      day,
+      month,
+      year,
+    } = req.body;
 
   const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
   if (!doctor) return next(new AppError("doctor not found", 404));
