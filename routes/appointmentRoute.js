@@ -10,6 +10,7 @@ import {
   getAllAppointments,
   bookAppointmentByPatient,
   bookAppointmentByReceptionist,
+  getCurrentPatientForDoctor
 } from "../controllers/appointmentController.js";
 import { uploadMedicalFilesMiddleware } from "../middlewares/multer.js";
 import { uploadMultipleToImageKit } from "../utils/imageKit.js";
@@ -51,4 +52,5 @@ router.get(
   restrictTo("patient"),
   getBookedAppointmentsForPatient,
 );
+router.get("/getCurrentPatientForDoctor/:id",restrictTo("doctor"),getCurrentPatientForDoctor);
 export default router;

@@ -471,3 +471,34 @@ export const bookAppointmentByReceptionist = catchAsync(
     return next(err);
   }
 });
+export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
+  const doctorId = req.user.id;
+  const { patientId } = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(patientId))
+    return next(new AppError("Invalid id", 400));
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);  
+
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999); 
+
+  const appointment = await Appointment.aggregate([
+    {
+      $match: {
+        doctor: new mongoose.Types.ObjectId(doctorId),
+        patient: new mongoose.Types.ObjectId(patientId),
+        date: { $gte: todayStart, $lte: todayEnd },
+      },
+    },
+  ]);
+
+  if (!appointment.length)
+    return next(new AppError("No appointment found for today", 404));
+
+  res.status(200).json({
+    status: "success",
+    data: { appointment: appointment[0] },
+  });
+});
