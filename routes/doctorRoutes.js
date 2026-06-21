@@ -29,7 +29,7 @@ doctorRouter.patch("/:id", restrictTo("admin"), updateDoctor);
 doctorRouter.delete("/:id", restrictTo("admin"), deleteDoctor);
 doctorRouter.get(
   "/:id/available-slots",
-  restrictTo("patient receptionist"),
+  restrictTo("patient ", "receptionist"),
   getAvailableSlots,
 );
 export default doctorRouter;
