@@ -87,10 +87,16 @@ const uniquePhone = () => {
   return `010${digits}`;
 };
 
+const uniqueLetters = (len = 6) =>
+  Array.from({ length: len }, () =>
+    String.fromCharCode(97 + Math.floor(Math.random() * 26)),
+  ).join("");
+
 const PATIENT_PHONE = uniquePhone();
 const DOCTOR_PHONE  = uniquePhone();
 const RECEP_PHONE   = uniquePhone();
 const ADMIN_PHONE   = "01000000000"; // Created by `npm run seed`
+const SPEC_NAME     = `Cardiology Test ${uniqueLetters()}`;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // TESTS
@@ -252,7 +258,7 @@ async function testSpecializations() {
     const res = await request
       .post("/api/v1/specializations")
       .set("Authorization", `Bearer ${state.adminToken}`)
-      .send({ name: "Cardiology Test", consultationFee: 200 });
+      .send({ name: SPEC_NAME, consultationFee: 200 });
     assert(res.status === 201, `Expected 201, got ${res.status}: ${JSON.stringify(res.body)}`);
     state.specializationId = res.body.data.specialization._id;
   });
@@ -261,7 +267,7 @@ async function testSpecializations() {
     const res = await request
       .put(`/api/v1/specializations/${state.specializationId}`)
       .set("Authorization", `Bearer ${state.adminToken}`)
-      .send({ name: "Cardiology Test", consultationFee: 250 });
+      .send({ name: SPEC_NAME, consultationFee: 250 });
     assert([200, 201].includes(res.status), `Expected 200/201, got ${res.status}`);
   });
 
@@ -312,7 +318,7 @@ async function testDoctors() {
   await test("GET /doctors/:id/available-slots — available slots", async () => {
     const res = await request
       .get(`/api/v1/doctors/${state.doctorUserId}/available-slots`)
-      .set("Authorization", `Bearer ${state.adminToken}`);
+      .set("Authorization", `Bearer ${state.patientToken}`);
     assert(res.status === 200, `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`);
   });
 
@@ -461,6 +467,29 @@ async function testAppointments() {
       .get("/api/v1/appointments/getPatientsForDoctor")
       .set("Authorization", `Bearer ${state.doctorToken}`);
     assert(res.status === 200, `Expected 200, got ${res.status}`);
+  });
+
+  await test("GET /appointments/getCurrentPatientForDoctor/:id — doctor", async () => {
+    const Appointment = mongoose.model("Appointment");
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    await Appointment.findByIdAndUpdate(state.appointmentId, {
+      date: today,
+      status: "قيد الانتظار",
+    });
+
+    const res = await request
+      .get(`/api/v1/appointments/getCurrentPatientForDoctor/${state.patientUserId}`)
+      .set("Authorization", `Bearer ${state.doctorToken}`);
+    assert(
+      res.status === 200,
+      `Expected 200, got ${res.status}: ${JSON.stringify(res.body)}`,
+    );
+    assert(res.body.data?.appointment, "No appointment returned");
+    assert(
+      String(res.body.data.appointment.patient) === String(state.patientUserId),
+      "Appointment patient does not match",
+    );
   });
 
   await test("GET /appointments/bookedAppointmentsForPatient — patient", async () => {

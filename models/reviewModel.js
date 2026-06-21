@@ -56,7 +56,7 @@ reviewSchema.statics.recalcRating = async function (doctorId) {
   ]);
 
   if (stats.length > 0) {
-    await DoctorProfile.findByIdAndUpdate(
+    await DoctorProfile.findOneAndUpdate(
       { user: doctorId },
       {
         ratingsAverage: stats[0].avgRating,
@@ -64,7 +64,7 @@ reviewSchema.statics.recalcRating = async function (doctorId) {
       },
     );
   } else {
-    await DoctorProfile.findByIdAndUpdate(
+    await DoctorProfile.findOneAndUpdate(
       { user: doctorId },
       {
         ratingsAverage: 4.5,
