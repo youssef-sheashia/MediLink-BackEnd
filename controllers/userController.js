@@ -42,12 +42,17 @@ export const changeUserActive = catchAsync(async (req, res, next) => {
   }
   user.active = !user.active;
   await user.save({ validateBeforeSave: false });
-  const actionName = user.role==="receptionist"?MAKE_RECEPTIONIST_UNACTIVE:user.role==="doctor"?MAKE_DOCTOR_UNACTIVE:MAKE_PATIENTS_UNACTIVE;
-  await Activity.create({user:user._id,action: ACTIONS[actionName]});
 
-  res.status(204).json({
-    status: "success",
-  });
+  const actionMap = {
+    receptionist: "MAKE_RECEPTIONIST_UNACTIVE",
+    doctor: "MAKE_DOCTOR_UNACTIVE",
+    patient: "MAKE_PATIENTS_UNACTIVE",
+  };
+
+  const actionName = actionMap[user.role];
+  await Activity.create({ user: user._id, action: ACTIONS[actionName] });
+
+  res.status(204).json({ status: "success" });
 });
 
 export const getMyProfile = catchAsync(async (req, res, next) => {
@@ -108,10 +113,10 @@ export const updateMe = catchAsync(async (req, res, next) => {
 
   // 3. update user
   const updateUser = await User.findByIdAndUpdate(req.user.id, updateObj, {
-    returnDocument: 'after',
+    returnDocument: "after",
     runValidators: true,
   });
-  await Activity.create({user:user._id,action: ACTIONS.UPDATE_PROFILE});
+  await Activity.create({ user: user._id, action: ACTIONS.UPDATE_PROFILE });
   res.status(200).json({
     status: "success",
     data: updateUser,

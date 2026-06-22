@@ -12,6 +12,10 @@ const appointmentSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "appointment must have a doctor"],
     },
+    isRated: {
+      type: Boolean,
+      default: false,
+    },
     date: {
       type: Date,
       required: [true, "appointment must have a date"],
