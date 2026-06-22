@@ -15,6 +15,7 @@ const appointmentSchema = new mongoose.Schema(
     isRated: {
       type: Boolean,
       default: false,
+      select: true,
     },
     date: {
       type: Date,
