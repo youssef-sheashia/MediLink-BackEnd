@@ -44,6 +44,9 @@ export const changeUserActive = catchAsync(async (req, res, next) => {
   if (user.active === false && req.body.notes) {
     user.notes = req.body.notes;
   }
+  if (user.active) {
+    user.notes = "";
+  }
   await user.save({ validateBeforeSave: false });
 
   const actionMap = {
