@@ -219,6 +219,7 @@ export const getBookedAppointmentsForPatient = catchAsync(
           status: 1,
           fees: 1,
           cancelledBy: 1,
+          isRated: 1,
           "doctor._id": 1,
           "doctor.firstName": 1,
           "doctor.lastName": 1,
