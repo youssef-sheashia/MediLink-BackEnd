@@ -6,42 +6,67 @@ import Appointment from "../models/appointmentModel.js";
 import { ACTIONS } from "../constant/activities.js";
 import Activity from "../models/activitiesModel.js";
 export const createReview = catchAsync(async (req, res, next) => {
-  const { stars, comment } = req.body;
+  const { stars, comment, appointmentId } = req.body;
   const patientId = req.user._id;
 
-  // 1. get the appointment and make sure it belongs to this patient
+  // 1. Get the appointment and verify it belongs to this patient,
+  //    is completed, and hasn't been rated yet
   const appointment = await Appointment.findOne({
+    _id: appointmentId,
     patient: patientId,
     status: "مكتمل",
     isRated: false,
   });
 
-  if (!appointment) return next(new AppError("Appointment not found", 404));
-
-  if (appointment.patient.toString() !== patientId.toString())
-    return next(new AppError("This appointment does not belong to you", 403));
-
-  // 2. only allow reviews for completed appointments
-  if (appointment.status !== "مكتمل")
+  if (!appointment)
     return next(
-      new AppError("You can only review a completed appointment", 400),
+      new AppError(
+        "Appointment not found, already rated, or does not belong to you",
+        404,
+      ),
     );
 
-  // 3. create the review — post save hook will auto recalculate doctor rating
-  const review = await Review.create({
-    patient: patientId,
-    doctor: appointment.doctor,
-    appointment: appointment._id,
-    stars,
-    comment,
-  });
-  await Appointment.findByIdAndUpdate(appointment._id, { isRated: true });
+  // 2. Atomically create the review, mark appointment as rated, and log activity
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  await Activity.create({ user: user._id, action: ACTIONS.CREATE_REVIEW });
-  res.status(201).json({
-    status: "success",
-    data: { review },
-  });
+  try {
+    const [review] = await Review.create(
+      [
+        {
+          patient: patientId,
+          doctor: appointment.doctor,
+          appointment: appointment._id,
+          stars,
+          comment,
+        },
+      ],
+      { session },
+    );
+
+    await Appointment.findByIdAndUpdate(
+      appointment._id,
+      { isRated: true },
+      { session },
+    );
+
+    await Activity.create(
+      [{ user: req.user._id, action: ACTIONS.CREATE_REVIEW }],
+      { session },
+    );
+
+    await session.commitTransaction();
+
+    res.status(201).json({
+      status: "success",
+      data: { review },
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    return next(err);
+  } finally {
+    session.endSession();
+  }
 });
 
 export const getDoctorReviews = catchAsync(async (req, res, next) => {
