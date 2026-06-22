@@ -411,7 +411,10 @@ async function testAppointments() {
     while (![1, 2, 3].includes(d.getDay())) {
       d.setDate(d.getDate() + 1);
     }
-    return d.toISOString().split("T")[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
   const bookingDate = getNextWorkingDay();
 
@@ -512,20 +515,16 @@ async function testPatients() {
   });
 
   await test("GET /patient/:id — get patient by id (admin)", async () => {
-    let profileId = state.patientProfileId;
-    if (!profileId) {
+    let patientId = state.patientUserId;
+    if (!patientId) {
       const User = mongoose.model("User");
       const patientUserObj = await User.findOne({ phone: "01066666666" });
       assert(patientUserObj, "Seeded patient user not found");
-
-      const PatientProfile = mongoose.model("PatientProfile");
-      const patientProfileObj = await PatientProfile.findOne({ user: patientUserObj._id });
-      assert(patientProfileObj, "Seeded patient profile not found");
-      profileId = patientProfileObj._id;
+      patientId = patientUserObj._id;
     }
 
     const res = await request
-      .get(`/api/v1/patient/${profileId}`)
+      .get(`/api/v1/patient/${patientId}`)
       .set("Authorization", `Bearer ${state.adminToken}`);
     assert(res.status === 200, `Expected 200, got ${res.status}`);
   });

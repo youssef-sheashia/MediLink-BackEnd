@@ -8,14 +8,14 @@ export const deleteOne = (Model) =>
       return next(new AppError("document not found", 404));
     }
     res.status(204).json({
-      status: "succes",
+      status: "success",
     });
   });
 export const createOne = (Model) =>
   catchAsync(async function (req, res, next) {
     const doc = await Model.create(req.body);
     res.status(201).json({
-      status: "succes",
+      status: "success",
       data: {
         data: doc,
       },
@@ -31,7 +31,7 @@ export const updateOne = (Model) =>
       return next(new AppError("document not found", 404));
     }
     res.status(200).json({
-      status: "succes",
+      status: "success",
       data: doc,
     });
   });
@@ -45,7 +45,7 @@ export const getOne = (Model, popOption) =>
       return next(new AppError("doc not found", 404));
     }
     res.status(200).json({
-      status: "succes",
+      status: "success",
       data: doc,
     });
   });

@@ -41,13 +41,15 @@ function prodError(err, res) {
 export function globalError(err, req, res, next) {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
-  if (process.env.NODE_ENV == "development") {
+  if (process.env.NODE_ENV === "development") {
     devError(err, res);
-  } else if (process.env.NODE_ENV == "production") {
+  } else {
+    // production or other fallback environments
     if (err.name === "CastError") err = castError(err);
-
     if (err.code === 11000) err = duplicateError(err);
     if (err.name === "ValidationError") err = ValidationError(err);
+    if (err.name === "JsonWebTokenError") err = new AppError("Invalid token. Please log in again.", 401);
+    if (err.name === "TokenExpiredError") err = new AppError("Your token has expired. Please log in again.", 401);
 
     prodError(err, res);
   }

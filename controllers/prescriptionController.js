@@ -10,7 +10,7 @@ export const createPrescription = catchAsync(async (req, res, next) => {
     ...req.body,
     doctor: req.user._id,
   });
-    await Activity.create({user:user._id,action: ACTIONS.CREATE_RECEPTIONIST});
+    await Activity.create({user:req.user._id,action: ACTIONS.CREATE_PRESCRIPTION});
 
   res.status(201).json({
     status: "success",

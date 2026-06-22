@@ -35,7 +35,7 @@ export const updateClinicInformations = catchAsync(async (req, res, next) => {
       runValidators: true,
     },
   );
-  await Activity.create({user:user._id,action: ACTIONS.UPDATE_CLINIC_INFORMATION});
+  await Activity.create({user:req.user._id,action: ACTIONS.UPDATE_CLINIC_INFORMATION});
   res.status(200).json({
     status: "success",
     data: { clinic },
@@ -51,7 +51,7 @@ export const updateClinicSchedule = catchAsync(async (req, res, next) => {
     { schedule: req.body },
     { new: true, runValidators: true },
   );
-  await Activity.create({user:user._id,action: ACTIONS.UPDATE_CLINIC_SCHEDULE});
+  await Activity.create({user:req.user._id,action: ACTIONS.UPDATE_CLINIC_SCHEDULE});
   res.status(200).json({
     status: "success",
     data: { schedule: clinic.schedule },

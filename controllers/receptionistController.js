@@ -146,7 +146,7 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
   }
 
   const updatedReceptionist = await Receptionist.findById(id).populate("user");
-      await Activity.create({user:user._id,action: ACTIONS.UPDATE_RECEPTIONIST_PROFILE});
+      await Activity.create({user:req.user._id,action: ACTIONS.UPDATE_RECEPTIONIST_PROFILE});
 
   res.status(200).json({
     status: "success",
@@ -187,7 +187,7 @@ export const deleteReceptionist = catchAsync(async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-          await Activity.create({user:user._id,action: ACTIONS.MAKE_RECEPTIONIST_UNACTIVE});
+          await Activity.create({user:req.user._id,action: ACTIONS.MAKE_RECEPTIONIST_UNACTIVE});
 
     res.status(204).json({
       status: "success",
