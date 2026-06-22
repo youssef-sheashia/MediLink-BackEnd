@@ -736,3 +736,44 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
     return next(err);
   }
 });
+export const getAppointmentsCountForPatient = catchAsync(
+  async (req, res, next) => {
+    const { patientID } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(patientID))
+      return next(new AppError("Invalid id", 400));
+    const patient = await User.find({ _id: patientID });
+    if (!patient) return next(new AppError("patient not found", 400));
+    
+    const stats = await Appointment.aggregate([
+      {
+        $match: { patient: new mongoose.Types.ObjectId(patientID) },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const result = {
+      totalAppointments: 0,
+      completedAppointments: 0,
+      cancelledAppointments: 0,
+      pendingAppointments: 0,
+    };
+
+    stats.forEach((item) => {
+      if (item._id === "مكتمل") result.completedAppointments = item.count;
+      if (item._id === "ملغى") result.cancelledAppointments = item.count;
+      if (item._id === "قيد الانتظار") result.pendingAppointments = item.count;
+
+      result.totalAppointments += item.count;
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: result,
+    });
+  },
+);
