@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import AppError from "../utils/appError.js";
 export const getAllActivities = catchAsync(async (req, res, next) => {
-  let activities = new APIFeatures(Activity.find(), req.query)
+  let activities = new APIFeatures(Activity.find().populate({ path: "user", select: "firstName lastName role" }), req.query)
     .filter()
     .sort()
     .limitFields()
@@ -32,6 +32,7 @@ export const getActivitiesByUser = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 20 } = req.query;
 
   const activities = await Activity.find({ user: id })
+    .populate({path:"user",select:"firstName lastName role"})
     .sort("-createdAt")
     .skip((Number(page) - 1) * Number(limit))
     .limit(Number(limit));
