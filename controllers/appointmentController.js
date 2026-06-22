@@ -736,44 +736,43 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
     return next(err);
   }
 });
-export const getAppointmentsCount = catchAsync(
-  async (req, res, next) => {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id))
-      return next(new AppError("Invalid id", 400));
-    const user = await User.find({ _id: id });
-    if (!user) return next(new AppError("user not found", 400));
-    
-    const stats = await Appointment.aggregate([
-      {
-        $match: { patient: new mongoose.Types.ObjectId(id) },
+export const getAppointmentsCount = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return next(new AppError("Invalid id", 400));
+  const user = await User.find({ _id: id });
+  if (!user) return next(new AppError("user not found", 400));
+  let matchObject =
+    user.role === "patient"
+      ? { $match: { patient: new mongoose.Types.ObjectId(id) } }
+      : { $match: { doctor: new mongoose.Types.ObjectId(id) } };
+  const stats = await Appointment.aggregate([
+    matchObject,
+    {
+      $group: {
+        _id: "$status",
+        count: { $sum: 1 },
       },
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    },
+  ]);
 
-    const result = {
-      totalAppointments: 0,
-      completedAppointments: 0,
-      cancelledAppointments: 0,
-      pendingAppointments: 0,
-    };
+  const result = {
+    totalAppointments: 0,
+    completedAppointments: 0,
+    cancelledAppointments: 0,
+    pendingAppointments: 0,
+  };
 
-    stats.forEach((item) => {
-      if (item._id === "مكتمل") result.completedAppointments = item.count;
-      if (item._id === "ملغى") result.cancelledAppointments = item.count;
-      if (item._id === "قيد الانتظار") result.pendingAppointments = item.count;
+  stats.forEach((item) => {
+    if (item._id === "مكتمل") result.completedAppointments = item.count;
+    if (item._id === "ملغى") result.cancelledAppointments = item.count;
+    if (item._id === "قيد الانتظار") result.pendingAppointments = item.count;
 
-      result.totalAppointments += item.count;
-    });
+    result.totalAppointments += item.count;
+  });
 
-    res.status(200).json({
-      status: "success",
-      data: result,
-    });
-  },
-);
+  res.status(200).json({
+    status: "success",
+    data: result,
+  });
+});
