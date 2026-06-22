@@ -6,11 +6,12 @@ import Appointment from "../models/appointmentModel.js";
 import { ACTIONS } from "../constant/activities.js";
 import Activity from "../models/activitiesModel.js";
 export const createReview = catchAsync(async (req, res, next) => {
-  const { stars, comment } = req.body;
+  const { stars, comment, appointmentId } = req.body;
   const patientId = req.user._id;
 
   // 1. get the appointment and make sure it belongs to this patient
   const appointment = await Appointment.findOne({
+    _id: appointmentId,
     patient: patientId,
     status: "مكتمل",
     isRated: false,
