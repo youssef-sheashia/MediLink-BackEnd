@@ -54,7 +54,7 @@ export const getPatientById = catchAsync(async (req, res, next) => {
   const result = await PatientProfile.aggregate([
     // 1) match the specific profile first
     {
-      $match: { _id: new mongoose.Types.ObjectId(req.params.id) },
+      $match: { user: new mongoose.Types.ObjectId(req.params.id) },
     },
 
     // 2) join with users collection (lowercase plural — mongodb collection name)
@@ -204,7 +204,7 @@ export const deletePatient = catchAsync(async (req, res, next) => {
 
   // use collection directly to bypass the pre /^find/ hook
   const patient = await User.collection.findOne({
-    _id: new mongoose.Types.ObjectId(id),
+    _: new mongoose.Types.ObjectId(id),
     role: "patient",
   });
 

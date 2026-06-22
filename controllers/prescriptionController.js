@@ -17,38 +17,6 @@ export const createPrescription = catchAsync(async (req, res, next) => {
   });
 });
 
-// export const getPrescriptionsByPatient = catchAsync(async (req, res, next) => {
-//   const { patientId } = req.params;
-
-//   if (!mongoose.Types.ObjectId.isValid(patientId)) {
-//     return next(new AppError("invalid patient id", 400));
-//   }
-
-//   const patientExists = await User.exists({
-//     _id: patientId,
-//     role: "patient",
-//   });
-
-//   if (!patientExists) {
-//     return next(new AppError("no patient found with this id", 404));
-//   }
-
-//   const prescriptions = await Prescription.find({ patient: patientId });
-
-//   res.status(200).json({
-//     status: "success",
-//     results: prescriptions.length,
-//     data: {
-//       prescriptions,
-//     },
-//   });
-// });
-// ─── Doctor: get prescriptions by patient id ──────────────────────────────────
-
-/**
- * GET /api/v1/prescriptions/patient/:patientId
- * Doctor only — view any patient's prescriptions by their user id.
- */
 export const getPrescriptionsByPatient = catchAsync(async (req, res, next) => {
   const { patientId } = req.params;
 
@@ -142,12 +110,7 @@ export const getPrescriptionsByPatient = catchAsync(async (req, res, next) => {
     data: { prescriptions },
   });
 });
-// ─── Patient: get own prescriptions ──────────────────────────────────────────
 
-/**
- * GET /api/v1/prescriptions/my
- * Patient only — view their own prescriptions.
- */
 export const getMyPrescriptions = catchAsync(async (req, res, next) => {
   const prescriptions = await Prescription.aggregate([
     // 1) match this patient's prescriptions

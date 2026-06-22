@@ -151,7 +151,7 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
     phone,
     experienceYears,
     page = 1,
-    limit = 10,
+    limit = 20,
   } = req.query;
   const skip = (Number(page) - 1) * Number(limit);
 
@@ -226,9 +226,9 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
 });
 
 export const getDoctor = catchAsync(async (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id)) 
+  if (!mongoose.Types.ObjectId.isValid(req.params.id))
     return next(new AppError("Invalid doctor ID", 400));
-  
+
   const doctor = await DoctorProfile.findOne({ user: req.params.id });
 
   if (!doctor) return next(new AppError("doctor not found", 404));
