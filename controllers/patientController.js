@@ -41,7 +41,7 @@ export const completeMyProfile = catchAsync(async (req, res, next) => {
   }
 
   await profile.save();
-  await Activity.create({user:user._id,action: ACTIONS.COMPLETE_PATIENT_PROFILE});
+  await Activity.create({user:req.user._id,action: ACTIONS.COMPLETE_PATIENT_PROFILE});
   res.status(200).json({
     status: "success",
     data: { profile },
@@ -179,7 +179,7 @@ export const deleteManyPatients = catchAsync(async (req, res, next) => {
     { _id: { $in: toDeactivateIds } },
     { $set: { active: false } },
   );
-  await Activity.create({user:user._id,action: ACTIONS.MAKE_PATIENTS_UNACTIVE});
+  await Activity.create({user:req.user._id,action: ACTIONS.MAKE_PATIENTS_UNACTIVE});
 
   res.status(200).json({
     status: "success",
@@ -206,7 +206,7 @@ export const deletePatient = catchAsync(async (req, res, next) => {
 
   // use collection directly to bypass the pre /^find/ hook
   const patient = await User.collection.findOne({
-    _: new mongoose.Types.ObjectId(id),
+    _id: new mongoose.Types.ObjectId(id),
     role: "patient",
   });
 
@@ -220,7 +220,7 @@ export const deletePatient = catchAsync(async (req, res, next) => {
     { _id: new mongoose.Types.ObjectId(id) },
     { $set: { active: false } },
   );
-  await Activity.create({user:user._id,action: ACTIONS.MAKE_PATIENTS_UNACTIVE});
+  await Activity.create({user:req.user._id,action: ACTIONS.MAKE_PATIENTS_UNACTIVE});
   res.status(204).json({ status: "success" });
 });
 
@@ -234,7 +234,7 @@ export const changeActiveStatus = catchAsync(async (req, res, next) => {
   }
   pateint.active = !pateint.active;
   await pateint.save();
-  await Activity.create({user:user._id,action: ACTIONS.CHANGE_PATIENT_STATUS});
+  await Activity.create({user:req.user._id,action: ACTIONS.CHANGE_PATIENT_STATUS});
   res.status(200).json({
     status: "success",
     message: `Patient is now ${pateint.active ? "active" : "inactive"}`,

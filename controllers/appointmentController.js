@@ -194,7 +194,6 @@ export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next)
   });
 });
 
-
 export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
   const patientId = req.user.id;
   const { doctorId, date, slotTime, reason } = req.body;
@@ -257,7 +256,6 @@ export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
   });
 });
 
-// ─── 6. BOOK APPOINTMENT BY RECEPTIONIST ─────────────────────────────────────
 export const bookAppointmentByReceptionist = catchAsync(async (req, res, next) => {
   const { doctorId, date, slotTime, firstName, lastName, phone, gender, day, month, year } = req.body;
 
@@ -345,7 +343,6 @@ export const bookAppointmentByReceptionist = catchAsync(async (req, res, next) =
   });
 });
 
-// ─── 7. GET CURRENT PATIENT FOR DOCTOR ───────────────────────────────────────
 export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
   const doctorId  = req.user.id;
   const patientId = req.params.id;
@@ -414,7 +411,6 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
   });
 });
 
-// ─── 8. CHANGE APPOINTMENT STATUS ────────────────────────────────────────────
 export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -452,7 +448,6 @@ export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
   });
 });
 
-// ─── 9. COMPLETE APPOINTMENT (doctor — creates prescription + report) ─────────
 export const completeAppointment = catchAsync(async (req, res, next) => {
   const doctorId      = req.user._id;
   const appointmentId = req.params.id;
@@ -510,7 +505,6 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
   }
 });
 
-// ─── 10. GET APPOINTMENTS COUNT ───────────────────────────────────────────────
 export const getAppointmentsCount = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 

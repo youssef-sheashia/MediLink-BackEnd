@@ -238,7 +238,7 @@ export const resetPassword = catchAsync(async (req, res, next) => {
 export const updatePassword = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user.id).select("+password");
   if (!user || !(await user.correctPassword(req.body.password, user.password)))
-    return next(new AppError("the password or email is not correct ", 401));
+    return next(new AppError("the password or phone is not correct", 401));
   const hashedPassword = await bcrypt.hash(req.body.newpassword, 12);
   user.password = hashedPassword;
   await user.save();

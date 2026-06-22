@@ -331,7 +331,7 @@ export const updateDoctor = catchAsync(async (req, res, next) => {
     // 3. Re-fetch with pre(/^find/) population applied
     const populated = await DoctorProfile.findOne({ user: req.params.id });
     await Activity.create({
-      user: user._id,
+      user: req.user._id,
       action: ACTIONS.UPDATE_DOCTOR_PROFILE,
     });
     res.status(200).json({
@@ -371,7 +371,7 @@ export const deleteDoctor = catchAsync(async (req, res, next) => {
     await session.commitTransaction();
     session.endSession();
     await Activity.create({
-      user: user._id,
+      user: req.user._id,
       action: ACTIONS.MAKE_DOCTOR_UNACTIVE,
     });
     res.status(204).json({ status: "success" });

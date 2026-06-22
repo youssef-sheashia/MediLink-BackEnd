@@ -122,7 +122,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
     returnDocument: "after",
     runValidators: true,
   });
-  await Activity.create({ user: user._id, action: ACTIONS.UPDATE_PROFILE });
+  await Activity.create({ user: req.user._id, action: ACTIONS.UPDATE_PROFILE });
   res.status(200).json({
     status: "success",
     data: updateUser,

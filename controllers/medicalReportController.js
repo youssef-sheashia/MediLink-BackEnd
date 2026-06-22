@@ -10,7 +10,7 @@ export const createMedicalReport = catchAsync(async (req, res, next) => {
     ...req.body,
     doctor: req.user._id,
   });
-  await Activity.create({user:user._id,action: ACTIONS.CREATE_MEDICAL_REPORT});
+  await Activity.create({user:req.user._id,action: ACTIONS.CREATE_MEDICAL_REPORT});
   res.status(201).json({
     status: "success",
     data: {

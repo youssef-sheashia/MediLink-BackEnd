@@ -39,7 +39,7 @@ const appointmentSchema = new mongoose.Schema(
     reason: {
       type: String,
       trim: true,
-      defalut: "",
+      default: "",
     },
     medicalFiles: [String],
   },

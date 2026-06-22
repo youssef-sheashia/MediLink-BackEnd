@@ -96,7 +96,7 @@ export const deleteReview = catchAsync(async (req, res, next) => {
 
   if (!review)
     return next(new AppError("Review not found or not yours to delete", 404));
-  await Activity.create({ user: user._id, action: ACTIONS.DELETE_REVIEW });
+  await Activity.create({ user: req.user._id, action: ACTIONS.DELETE_REVIEW });
 
   res.status(204).json({ status: "success" });
 });
