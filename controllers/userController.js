@@ -41,6 +41,9 @@ export const changeUserActive = catchAsync(async (req, res, next) => {
     return next(new AppError("user not found", 404));
   }
   user.active = !user.active;
+  if (user.active === false && req.body.notes) {
+    user.notes = req.body.notes;
+  }
   await user.save({ validateBeforeSave: false });
 
   const actionMap = {
