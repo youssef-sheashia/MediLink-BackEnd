@@ -747,7 +747,7 @@ export const getAppointmentsCount = catchAsync(async (req, res, next) => {
     user.role === "patient"
       ? { $match: { patient: new mongoose.Types.ObjectId(id) } }
       : { $match: { doctor: new mongoose.Types.ObjectId(id) } };
-  console.log(user.role,matchObject);
+  console.log(user.role, matchObject);
   const stats = await Appointment.aggregate([
     matchObject,
     {
@@ -777,4 +777,67 @@ export const getAppointmentsCount = catchAsync(async (req, res, next) => {
     status: "success",
     data: result,
   });
+});
+
+export const cancelAppointment = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return next(new AppError("Invalid id", 400));
+
+  const appointment = await Appointment.findById(id);
+  if (!appointment) return next(new AppError("Appointment not found", 404));
+
+  // 1. Check ownership — receptionists can cancel any, patients only their own
+  if (
+    req.user.role === "patient" &&
+    appointment.patient.toString() !== req.user._id.toString()
+  )
+    return next(
+      new AppError("You are not allowed to cancel this appointment", 403),
+    );
+
+  // 2. Guard against double-cancellation before touching anything else
+  if (appointment.status === "ملغى")
+    return next(new AppError("Appointment is already cancelled", 400));
+
+  // 3. Enforce the 6-hour cancellation window
+  const now = new Date();
+  const appointmentDate = new Date(appointment.slotTime);
+  const diffInHours =
+    (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  if (diffInHours < 6)
+    return next(
+      new AppError(
+        "Cannot cancel an appointment less than 6 hours before it",
+        400,
+      ),
+    );
+
+  // 4. Atomically update status and log activity
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    appointment.status = "ملغى";
+    await appointment.save({ session });
+
+    await Activity.create(
+      [{ user: req.user._id, action: ACTIONS.CANCEL_APPOINTMENT }],
+      { session },
+    );
+
+    await session.commitTransaction();
+
+    res.status(200).json({
+      status: "success",
+      data: { appointment },
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    return next(err);
+  } finally {
+    session.endSession();
+  }
 });
