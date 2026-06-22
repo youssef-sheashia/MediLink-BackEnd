@@ -133,7 +133,7 @@ export const createDoctor = catchAsync(async (req, res, next) => {
     session.endSession();
 
     user.password = undefined;
-    await Activity.create({user:user._id,action: ACTIONS.CREATE_DOCTOR});
+    await Activity.create({ user: user._id, action: ACTIONS.CREATE_DOCTOR });
     res.status(201).json({
       status: "success",
       data: { user, profile },
@@ -189,6 +189,31 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
         : {},
     },
     {
+      $lookup: {
+        from: "appointments",
+        let: { doctorUserId: "$user._id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$doctor", "$$doctorUserId"] },
+                  { $eq: ["$status", "مكتمل"] },
+                ],
+              },
+            },
+          },
+        ],
+        as: "completedAppointments",
+      },
+    },
+
+    {
+      $addFields: {
+        completedAppointmentsCount: { $size: "$completedAppointments" },
+      },
+    },
+    {
       $project: {
         experienceYears: 1,
         workingDays: 1,
@@ -197,6 +222,7 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
         specialization: 1,
         ratingsAverage: 1,
         ratingsCount: 1,
+        completedAppointmentsCount:1,
         "user.firstName": 1,
         "user.lastName": 1,
         "user.phone": 1,
@@ -218,7 +244,7 @@ export const getAllDoctors = catchAsync(async (req, res, next) => {
     ...doc.user,
     user: undefined,
   }));
-
+  console.log(flattened);
   res.status(200).json({
     status: "success",
     length: flattened.length,
@@ -304,7 +330,10 @@ export const updateDoctor = catchAsync(async (req, res, next) => {
 
     // 3. Re-fetch with pre(/^find/) population applied
     const populated = await DoctorProfile.findOne({ user: req.params.id });
-    await Activity.create({user:user._id,action: ACTIONS.UPDATE_DOCTOR_PROFILE});
+    await Activity.create({
+      user: user._id,
+      action: ACTIONS.UPDATE_DOCTOR_PROFILE,
+    });
     res.status(200).json({
       status: "success",
       data: { doctor: populated },
@@ -341,7 +370,10 @@ export const deleteDoctor = catchAsync(async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-    await Activity.create({user:user._id,action: ACTIONS.MAKE_DOCTOR_UNACTIVE});
+    await Activity.create({
+      user: user._id,
+      action: ACTIONS.MAKE_DOCTOR_UNACTIVE,
+    });
     res.status(204).json({ status: "success" });
   } catch (err) {
     await session.abortTransaction();
