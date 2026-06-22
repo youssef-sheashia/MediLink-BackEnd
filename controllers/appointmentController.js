@@ -625,10 +625,10 @@ export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
 });
 export const completeAppointment = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
-  const  appointmentId  = req.params.id; // ← from param
+  const appointmentId = req.params.id; // ← from param
 
   const { diagnosis, notes, medicines } = req.body; // ← no appointmentId, no patient
-
+  console.log(diagnosis);
   if (!mongoose.Types.ObjectId.isValid(appointmentId))
     return next(new AppError("invalid appointment id", 400));
 
@@ -659,7 +659,7 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
           patient: appointment.patient, // ← from appointment
           doctor: doctorId,
           appointment: appointment._id,
-          diagnosis,
+          diagnosis: diagnosis, // ← from body
           notes,
         },
       ],

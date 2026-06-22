@@ -19,7 +19,7 @@ const medicalReportSchema = new mongoose.Schema(
     },
     diagnosis: {
       type: String,
-      required: [true, "diagnosis is required"],
+      // required: [true, "diagnosis is required"],
       trim: true,
       minlength: [2, "diagnosis must be at least 2 characters"],
       maxlength: [200, "diagnosis must be at most 200 characters"],
@@ -30,7 +30,7 @@ const medicalReportSchema = new mongoose.Schema(
       maxlength: [1000, "notes must be at most 1000 characters"],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 medicalReportSchema.index({ patient: 1, createdAt: -1 });
