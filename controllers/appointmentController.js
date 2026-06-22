@@ -1,19 +1,24 @@
 import catchAsync from "../utils/catchAsync.js";
 import mongoose from "mongoose";
-import { APIFeatures } from "../utils/apiFeatures.js";
 import Appointment from "../models/appointmentModel.js";
-import Specialization from "../models/specializationModel.js";
 import DoctorProfile from "../models/doctorProfileModel.js";
-import Clinic from "../models/clinicModel.js";
 import User from "../models/userModel.js";
 import PatientProfile from "../models/patientProfileModel.js";
-import AppError from "../utils/appError.js";
 import PrescriptionModel from "../models/prescriptionModel.js";
 import MedicalReportModel from "../models/medicalReportModel.js";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
 import Activity from "../models/activitiesModel.js";
+import AppError from "../utils/appError.js";
 import { ACTIONS } from "../constant/activities.js";
+import crypto from "node:crypto";
+import bcrypt from "bcryptjs";
+import {
+  getDoctorSpecialization,
+  isDoctorAvailable,
+  checkSameDoctorSameDay,
+  checkSameSpecializationSameDay,
+  checkPatientSlotConflict,
+} from "../utils/appointmentHelpers.js";
+
 export const getMyAppointments = catchAsync(async (req, res, next) => {
   const { date, startDate, endDate, month, year } = req.validatedQuery;
 
@@ -50,31 +55,28 @@ export const getMyAppointments = catchAsync(async (req, res, next) => {
     data: { appointments },
   });
 });
+
 export const getAllAppointments = catchAsync(async (req, res, next) => {
-  const allAppointments = await Appointment.find()
+  const appointments = await Appointment.find()
     .populate("patient", "firstName lastName phone photo")
-    .populate("doctor", "firstName lastName phone photo");
+    .populate("doctor",  "firstName lastName phone photo");
+
   res.status(200).json({
     status: "success",
-    length: allAppointments.length,
-    data: { allAppointments },
+    length: appointments.length,
+    data: { appointments },
   });
 });
+
 export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
   const { search } = req.query;
-  const page = Number(req.query.page) || 1;
+  const page  = Number(req.query.page)  || 1;
   const limit = Number(req.query.limit) || 10;
+
   const patients = await Appointment.aggregate([
     { $match: { doctor: new mongoose.Types.ObjectId(doctorId) } },
-
-    {
-      $group: {
-        _id: "$patient",
-        visitCount: { $sum: 1 },
-      },
-    },
-
+    { $group: { _id: "$patient", visitCount: { $sum: 1 } } },
     {
       $lookup: {
         from: "users",
@@ -83,28 +85,24 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
         as: "patient",
       },
     },
-
     { $unwind: "$patient" },
-
     ...(search
-      ? [
-          {
-            $match: {
-              $or: [
-                { "patient.firstName": { $regex: search, $options: "i" } },
-                { "patient.lastName": { $regex: search, $options: "i" } },
-              ],
-            },
+      ? [{
+          $match: {
+            $or: [
+              { "patient.firstName": { $regex: search, $options: "i" } },
+              { "patient.lastName":  { $regex: search, $options: "i" } },
+            ],
           },
-        ]
+        }]
       : []),
     {
       $project: {
         _id: 0,
-        patientId: "$_id",
-        firstName: "$patient.firstName",
-        lastName: "$patient.lastName",
-        phone: "$patient.phone",
+        patientId:  "$_id",
+        firstName:  "$patient.firstName",
+        lastName:   "$patient.lastName",
+        phone:      "$patient.phone",
         visitCount: 1,
       },
     },
@@ -119,158 +117,125 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   });
 });
 
-export const getBookedAppointmentsForPatient = catchAsync(
-  async (req, res, next) => {
-    const patientId = req.user._id;
-    const { search, page = 1, limit = 50 } = req.query;
-    if (!mongoose.Types.ObjectId.isValid(patientId))
-      return next(new AppError("Invalid id", 400));
-    const appointments = await Appointment.aggregate([
-      {
-        $match: {
-          patient: new mongoose.Types.ObjectId(patientId),
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          let: { doctorId: "$doctor" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$_id", "$$doctorId"] },
-              },
-            },
-            {
-              $project: {
-                firstName: 1,
-                lastName: 1,
-                photo: 1,
-              },
-            },
-          ],
-          as: "doctor",
-        },
-      },
-      { $unwind: "$doctor" },
+export const getBookedAppointmentsForPatient = catchAsync(async (req, res, next) => {
+  const patientId = req.user._id;
+  const { search, page = 1, limit = 50 } = req.query;
 
-      {
-        $lookup: {
-          from: "doctorprofiles",
-          let: { doctorUserId: "$doctor._id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$user", "$$doctorUserId"] },
-              },
-            },
-            {
-              $lookup: {
-                from: "specializations",
-                localField: "specialization",
-                foreignField: "_id",
-                as: "specialization",
-              },
-            },
-
-            {
-              $unwind: {
-                path: "$specialization",
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-
-            {
-              $project: {
-                "specialization.name": 1,
-              },
-            },
-          ],
-          as: "doctorProfile",
-        },
+  const appointments = await Appointment.aggregate([
+    { $match: { patient: new mongoose.Types.ObjectId(patientId) } },
+    {
+      $lookup: {
+        from: "users",
+        let: { doctorId: "$doctor" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$_id", "$$doctorId"] } } },
+          { $project: { firstName: 1, lastName: 1, photo: 1 } },
+        ],
+        as: "doctor",
       },
-      {
-        $unwind: {
-          path: "$doctorProfile",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      ...(search
-        ? [
-            {
-              $match: {
-                $or: [
-                  { "doctor.firstName": { $regex: search, $options: "i" } },
-                  { "doctor.lastName": { $regex: search, $options: "i" } },
-                ],
-              },
+    },
+    { $unwind: "$doctor" },
+    {
+      $lookup: {
+        from: "doctorprofiles",
+        let: { doctorUserId: "$doctor._id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$user", "$$doctorUserId"] } } },
+          {
+            $lookup: {
+              from: "specializations",
+              localField: "specialization",
+              foreignField: "_id",
+              as: "specialization",
             },
-          ]
-        : []),
-      { $sort: { date: -1 } },
-
-      { $skip: (Number(page) - 1) * Number(limit) },
-      { $limit: Number(limit) },
-      {
-        $project: {
-          _id: 1,
-          date: 1,
-          slotTime: 1,
-          status: 1,
-          fees: 1,
-          cancelledBy: 1,
-          "doctor._id": 1,
-          "doctor.firstName": 1,
-          "doctor.lastName": 1,
-          "doctor.photo": 1,
-          "doctorProfile.specialization.name": 1,
-        },
+          },
+          { $unwind: { path: "$specialization", preserveNullAndEmptyArrays: true } },
+          { $project: { "specialization.name": 1 } },
+        ],
+        as: "doctorProfile",
       },
-    ]);
+    },
+    { $unwind: { path: "$doctorProfile", preserveNullAndEmptyArrays: true } },
+    ...(search
+      ? [{
+          $match: {
+            $or: [
+              { "doctor.firstName": { $regex: search, $options: "i" } },
+              { "doctor.lastName":  { $regex: search, $options: "i" } },
+            ],
+          },
+        }]
+      : []),
+    { $sort: { date: -1 } },
+    { $skip: (Number(page) - 1) * Number(limit) },
+    { $limit: Number(limit) },
+    {
+      $project: {
+        _id: 1,
+        date: 1,
+        slotTime: 1,
+        status: 1,
+        fees: 1,
+        cancelledBy: 1,
+        isRated: 1,
+        "doctor._id": 1,
+        "doctor.firstName": 1,
+        "doctor.lastName": 1,
+        "doctor.photo": 1,
+        "doctorProfile.specialization.name": 1,
+      },
+    },
+  ]);
 
-    res.status(200).json({
-      status: "success",
-      length: appointments.length,
-      data: { appointments },
-    });
-  },
-);
+  res.status(200).json({
+    status: "success",
+    length: appointments.length,
+    data: { appointments },
+  });
+});
+
 
 export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
   const patientId = req.user.id;
   const { doctorId, date, slotTime, reason } = req.body;
 
-  // 1) validate patient
+  // validate patient
   const patient = await User.findOne({ _id: patientId, role: "patient" });
   if (!patient) return next(new AppError("patient not found", 404));
 
-  // 2) validate doctor
+  // validate doctor
   const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
   if (!doctor) return next(new AppError("doctor not found", 404));
 
-  // 3) check doctor availability
-  const isAvaliable = await isDoctorAvailable(doctorId, date, slotTime);
-  if (!isAvaliable)
+  // check doctor availability (slot + working day + hours)
+  const isAvailable = await isDoctorAvailable(doctorId, date, slotTime);
+  if (!isAvailable)
     return next(new AppError("doctor isn't available in this time", 400));
 
-  // 4) get specialization for fees
+  // get specialization and fees
   const specialization = await getDoctorSpecialization(doctorId);
   if (!specialization)
     return next(new AppError("doctor has no specialization assigned", 400));
-  // check if patient book with this docotr in this day
-  const oldAppointment = await Appointment.findOne({
-    patient: patientId,
-    doctor: doctorId,
-    date,
-  });
-  if (oldAppointment)
-    return next(
-      new AppError("you can't book with same doctor in same day twice", 400),
-    );
-  // 5) get uploaded file urls from ImageKit middleware (req.uploadedFiles)
+
+  // patient can't book same doctor twice on same day
+  const sameDoctorOk = await checkSameDoctorSameDay(patientId, doctorId, date);
+  if (!sameDoctorOk)
+    return next(new AppError("you already have an appointment with this doctor today", 400));
+
+  // patient can't book same specialization twice on same day
+  const sameSpecOk = await checkSameSpecializationSameDay(patientId, doctorId, date);
+  if (!sameSpecOk)
+    return next(new AppError("you already have an appointment with a doctor of the same specialization today", 400));
+
+  // patient can't have overlapping slot on same day
+  const slotOk = await checkPatientSlotConflict(patientId, date, slotTime);
+  if (!slotOk)
+    return next(new AppError("you already have an appointment at this time", 400));
+
+  // get uploaded file urls from ImageKit middleware
   const medicalFiles = req.uploadedFiles?.map((f) => f.url) ?? [];
 
-  // 6) create appointment
+  // create appointment
   const newAppointment = await Appointment.create({
     patient: patientId,
     doctor: doctorId,
@@ -280,278 +245,135 @@ export const bookAppointmentByPatient = catchAsync(async (req, res, next) => {
     reason,
     medicalFiles,
   });
+
   await Activity.create({
     user: req.user._id,
     action: ACTIONS.BOOK_APPOINTMENT,
   });
+
   res.status(201).json({
     status: "success",
     data: { appointment: newAppointment },
   });
 });
-const getDoctorSpecialization = async (doctorId) => {
-  const result = await DoctorProfile.aggregate([
-    {
-      $match: {
-        user: new mongoose.Types.ObjectId(doctorId),
-      },
-    },
-    {
-      $lookup: {
-        from: "specializations",
-        localField: "specialization", // ObjectId in doctorprofiles
-        foreignField: "_id", // _id in specializations
-        as: "specialization",
-      },
-    },
-    {
-      $unwind: {
-        path: "$specialization",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        specializationId: "$specialization._id",
-        specializationName: "$specialization.name",
-        consultationFee: "$specialization.consultationFee",
-      },
-    },
-  ]);
-  console.log(result[0]);
-  return result[0] ?? null;
-};
-async function isDoctorAvailable(doctorId, date, slotTime) {
-  // ── GET CLINIC DURATION FIRST ──────────────────────────────────────────────
-  const clinic = await Clinic.findOne(
-    {},
-    { "schedule.appointmentDuration": 1 },
-  );
-  const duration = clinic?.schedule?.appointmentDuration ?? 25; // default 25 min
 
-  // ── CONVERT SLOTTIME TO MINUTES ────────────────────────────────────────────
-  const toMinutes = (time) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
+// ─── 6. BOOK APPOINTMENT BY RECEPTIONIST ─────────────────────────────────────
+export const bookAppointmentByReceptionist = catchAsync(async (req, res, next) => {
+  const { doctorId, date, slotTime, firstName, lastName, phone, gender, day, month, year } = req.body;
 
-  const toTimeString = (minutes) => {
-    const h = Math.floor(minutes / 60)
-      .toString()
-      .padStart(2, "0");
-    const m = (minutes % 60).toString().padStart(2, "0");
-    return `${h}:${m}`;
-  };
+  // validate doctor
+  const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
+  if (!doctor) return next(new AppError("doctor not found", 404));
 
-  const slotMinutes = toMinutes(slotTime);
+  // check doctor availability
+  const isAvailable = await isDoctorAvailable(doctorId, date, slotTime);
+  if (!isAvailable)
+    return next(new AppError("doctor isn't available in this time", 400));
 
-  // ── CALCULATE CONFLICT RANGE ───────────────────────────────────────────────
-  // example: slotTime = "09:25", duration = 25 min
-  // any existing appointment between "09:00" and "09:49" conflicts
-  // because:
-  //   "09:00" appointment ends at "09:25" → conflicts with "09:25"
-  //   "09:25" appointment ends at "09:50" → conflicts with "09:25"
-  //   "09:49" appointment ends at "10:14" → conflicts with "09:25"
-  //   "09:50" appointment starts after our slot ends → no conflict
+  // get specialization and fees
+  const specialization = await getDoctorSpecialization(doctorId);
+  if (!specialization)
+    return next(new AppError("doctor has no specialization assigned", 400));
 
-  const rangeStart = toTimeString(slotMinutes - (duration - 1)); // "09:01"
-  const rangeEnd = toTimeString(slotMinutes + (duration - 1)); // "09:49"
+  // find patient by phone or create new one
+  const existingPatient = await User.findOne({ phone });
+  let patientId;
 
-  // ── CHECK 1 — slot conflict with range ────────────────────────────────────
-  // get all appointments for this doctor on this date (not cancelled)
-  const appointments = await Appointment.find({
-    doctor: new mongoose.Types.ObjectId(doctorId),
-    date: new Date(date),
-    status: { $ne: "ملغى" },
-  }).select("slotTime");
+  if (existingPatient) {
+    patientId = existingPatient._id;
 
-  // check in JS — convert each stored slotTime to minutes and compare
-  const hasConflict = appointments.some((apt) => {
-    const aptMinutes = toMinutes(apt.slotTime);
-    return (
-      aptMinutes >= toMinutes(rangeStart) && aptMinutes <= toMinutes(rangeEnd)
-    );
-    // any existing appointment that falls within our conflict range
-  });
+    // run same checks as patient booking
+    const sameDoctorOk = await checkSameDoctorSameDay(patientId, doctorId, date);
+    if (!sameDoctorOk)
+      return next(new AppError("this patient already has an appointment with this doctor today", 400));
 
-  if (hasConflict) return false;
-  console.log("check2 valid");
+    const sameSpecOk = await checkSameSpecializationSameDay(patientId, doctorId, date);
+    if (!sameSpecOk)
+      return next(new AppError("this patient already has an appointment with a doctor of the same specialization today", 400));
 
-  // ── CHECK 2 — is this day within doctor's working days? ───────────────────
-  const doctorProfile = await DoctorProfile.findOne({
-    user: new mongoose.Types.ObjectId(doctorId),
-  });
+    const slotOk = await checkPatientSlotConflict(patientId, date, slotTime);
+    if (!slotOk)
+      return next(new AppError("this patient already has an appointment at this time", 400));
 
-  if (!doctorProfile) return false;
+  } else {
+    // create new patient + profile in transaction
+    const birthDate     = new Date(year, month - 1, day);
+    const tempPassword  = crypto.randomBytes(8).toString("hex");
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
-  const dayNames = [
-    "الاحد",
-    "الاثنين",
-    "الثلاثاء",
-    "الاربعاء",
-    "الخميس",
-    "الجمعة",
-    "السبت",
-  ];
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-  const dayName = dayNames[new Date(date).getDay()];
-  if (!doctorProfile.workingDays.includes(dayName)) return false;
-  console.log("check2 valid");
-  // ── CHECK 3 — is slotTime within doctor's working hours? ──────────────────
-  const startMinutes = toMinutes(doctorProfile.startTime);
-  const endMinutes = toMinutes(doctorProfile.endTime);
+    try {
+      const [newPatient] = await User.create(
+        [{ firstName, lastName, phone, gender, birthDate, role: "patient", password: hashedPassword, isPreHashed: true }],
+        { session },
+      );
 
-  if (slotMinutes < startMinutes || slotMinutes >= endMinutes) return false;
+      await PatientProfile.create([{ user: newPatient._id }], { session });
 
-  return true;
-}
-export const bookAppointmentByReceptionist = catchAsync(
-  async (req, res, next) => {
-    const {
-      doctorId,
-      date,
-      slotTime,
-      firstName,
-      lastName,
-      phone,
-      gender,
-      day,
-      month,
-      year,
-    } = req.body;
+      await session.commitTransaction();
+      session.endSession();
 
-    const doctor = await User.findOne({ _id: doctorId, role: "doctor" });
-    if (!doctor) return next(new AppError("doctor not found", 404));
-    const isAvailable = await isDoctorAvailable(doctorId, date, slotTime);
-    if (!isAvailable)
-      return next(new AppError("doctor isn't available in this time", 400));
+      patientId = newPatient._id;
 
-    const specialization = await getDoctorSpecialization(doctorId);
-    if (!specialization)
-      return next(new AppError("doctor has no specialization assigned", 400));
-
-    const existingPatient = await User.findOne({ phone });
-
-    let patientId;
-
-    if (existingPatient) {
-      patientId = existingPatient._id;
-      // check if patient book with this docotr in this day
-      const oldAppointment = await Appointment.findOne({
-        patient: patientId,
-        doctor: doctorId,
-        date,
-      });
-      if (oldAppointment)
-        return next(
-          new AppError(
-            "you can't book with same doctor in same day twice",
-            400,
-          ),
-        );
-    } else {
-      const birthDate = new Date(year, month - 1, day);
-
-      const tempPassword = crypto.randomBytes(8).toString("hex");
-      const hashedPassword = await bcrypt.hash(tempPassword, 12);
-
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const [newPatient] = await User.create(
-          [
-            {
-              firstName,
-              lastName,
-              phone,
-              gender,
-              birthDate,
-              role: "patient",
-              password: hashedPassword,
-              isPreHashed: true,
-            },
-          ],
-          { session },
-        );
-
-        await PatientProfile.create([{ user: newPatient._id }], { session });
-
-        await session.commitTransaction();
-        session.endSession();
-
-        patientId = newPatient._id;
-      } catch (err) {
-        await session.abortTransaction();
-        session.endSession();
-        return next(err);
-      }
+    } catch (err) {
+      await session.abortTransaction();
+      session.endSession();
+      return next(err);
     }
+  }
 
-    const newAppointment = await Appointment.create({
-      patient: patientId,
-      doctor: doctorId,
-      date,
-      slotTime,
-      fees: specialization.consultationFee,
-      reason: "",
-    });
-    const activites = [
-      { user: req.user._id, action: ACTIONS.BOOK_APPOINTMENT },
-      { user: req.user._id, action: ACTIONS.CREATE_PATIENT_USER },
-    ];
-    await Activity.insertMany(activites);
-    res.status(201).json({
-      status: "success",
-      data: { appointment: newAppointment },
-    });
-  },
-);
-const findActivePatient = async (patientId, next) => {
-  if (!mongoose.Types.ObjectId.isValid(patientId))
-    return next(new AppError("invalid patient id", 400));
-
-  const patient = await User.collection.findOne({
-    _id: new mongoose.Types.ObjectId(patientId),
-    role: "patient",
+  // create appointment outside transaction — independent operation
+  const newAppointment = await Appointment.create({
+    patient: patientId,
+    doctor: doctorId,
+    date,
+    slotTime,
+    fees: specialization.consultationFee,
+    reason: "",
   });
 
-  if (!patient) return next(new AppError("no patient found with this id", 404));
+  await Activity.insertMany([
+    { user: req.user._id, action: ACTIONS.BOOK_APPOINTMENT},
+    { user: req.user._id, action: ACTIONS.CREATE_PATIENT_USER },
+  ]);
 
-  if (!patient.active)
-    return next(new AppError("this patient account is deactivated", 403));
+  res.status(201).json({
+    status: "success",
+    data: { appointment: newAppointment },
+  });
+});
 
-  return patient;
-};
+// ─── 7. GET CURRENT PATIENT FOR DOCTOR ───────────────────────────────────────
 export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
-  const doctorId = req.user.id;
+  const doctorId  = req.user.id;
   const patientId = req.params.id;
 
   if (!mongoose.Types.ObjectId.isValid(patientId))
     return next(new AppError("invalid patient id", 400));
 
-  // bypass pre hook
-  const patientUser = await findActivePatient(patientId, next);
-  if (!patientUser) return;
+  // bypass pre-hook — use collection directly
+  const patientUser = await User.collection.findOne({
+    _id: new mongoose.Types.ObjectId(patientId),
+    role: "patient",
+  });
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  if (!patientUser) return next(new AppError("no patient found with this id", 404));
+  if (!patientUser.active) return next(new AppError("this patient account is deactivated", 403));
+
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayEnd   = new Date(); todayEnd.setHours(23, 59, 59, 999);
 
   const result = await Appointment.aggregate([
-    // 1) match today's appointment
     {
       $match: {
-        doctor: new mongoose.Types.ObjectId(doctorId),
+        doctor:  new mongoose.Types.ObjectId(doctorId),
         patient: new mongoose.Types.ObjectId(patientId),
-        date: { $gte: todayStart, $lte: todayEnd },
-        status: "قيد الانتظار",
+        date:    { $gte: todayStart, $lte: todayEnd },
+        status:  "قيد الانتظار",
       },
     },
-
-    // 2) join patient user info
     {
       $lookup: {
         from: "users",
@@ -561,8 +383,6 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
       },
     },
     { $unwind: { path: "$patient", preserveNullAndEmptyArrays: true } },
-
-    // 3) join patient profile
     {
       $lookup: {
         from: "patientprofiles",
@@ -572,36 +392,14 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
       },
     },
     { $unwind: { path: "$patientProfile", preserveNullAndEmptyArrays: true } },
-
-    // 4) shape the response
     {
       $project: {
-        // appointment fields
-        date: 1,
-        slotTime: 1,
-        status: 1,
-        reason: 1,
-        fees: 1,
-        medicalFiles: 1,
-        createdAt: 1,
-
-        // patient basic info
-        "patient._id": 1,
-        "patient.firstName": 1,
-        "patient.lastName": 1,
-        "patient.phone": 1,
-        "patient.photo": 1,
-        "patient.gender": 1,
-        "patient.birthDate": 1,
-
-        // patient profile info
-        "patientProfile.bloodType": 1,
-        "patientProfile.tall": 1,
-        "patientProfile.weight": 1,
-        "patientProfile.smoking": 1,
-        "patientProfile.allergies": 1,
-        "patientProfile.chronicConditions": 1,
-        "patientProfile.chronicMedications": 1,
+        date: 1, slotTime: 1, status: 1, reason: 1, fees: 1, medicalFiles: 1, createdAt: 1,
+        "patient._id": 1, "patient.firstName": 1, "patient.lastName": 1,
+        "patient.phone": 1, "patient.photo": 1, "patient.gender": 1, "patient.birthDate": 1,
+        "patientProfile.bloodType": 1, "patientProfile.tall": 1, "patientProfile.weight": 1,
+        "patientProfile.smoking": 1, "patientProfile.allergies": 1,
+        "patientProfile.chronicConditions": 1, "patientProfile.chronicMedications": 1,
         "patientProfile.medicalFiles": 1,
       },
     },
@@ -615,6 +413,8 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
     data: { appointment: result[0] },
   });
 });
+
+// ─── 8. CHANGE APPOINTMENT STATUS ────────────────────────────────────────────
 export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -630,24 +430,17 @@ export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("invalid status value", 400));
 
   if (appointment.status === "ملغى")
-    return next(
-      new AppError("cannot change status of a cancelled appointment", 400),
-    );
+    return next(new AppError("cannot change status of a cancelled appointment", 400));
 
   if (appointment.status === "مكتمل" && changeTo === "قيد الانتظار")
-    return next(
-      new AppError(
-        "cannot revert a completed appointment back to pending",
-        400,
-      ),
-    );
+    return next(new AppError("cannot revert a completed appointment back to pending", 400));
 
-  if (changeTo === "ملغى") {
+  if (changeTo === "ملغى")
     appointment.cancelledBy = req.user.role;
-  }
 
   appointment.status = changeTo;
   await appointment.save();
+
   await Activity.create({
     user: req.user._id,
     action: ACTIONS.CHANGE_APPOINTMENT_STATUS,
@@ -658,16 +451,16 @@ export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
     data: { appointment },
   });
 });
-export const completeAppointment = catchAsync(async (req, res, next) => {
-  const doctorId = req.user._id;
-  const appointmentId = req.params.id; // ← from param
 
-  const { diagnosis, notes, medicines } = req.body; // ← no appointmentId, no patient
-  console.log(diagnosis);
+// ─── 9. COMPLETE APPOINTMENT (doctor — creates prescription + report) ─────────
+export const completeAppointment = catchAsync(async (req, res, next) => {
+  const doctorId      = req.user._id;
+  const appointmentId = req.params.id;
+  const { diagnosis, notes, medicines } = req.body;
+
   if (!mongoose.Types.ObjectId.isValid(appointmentId))
     return next(new AppError("invalid appointment id", 400));
 
-  // patient comes from the appointment itself — not from the body
   const appointment = await Appointment.findOne({
     _id: appointmentId,
     doctor: doctorId,
@@ -675,36 +468,19 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
   });
 
   if (!appointment)
-    return next(
-      new AppError("appointment not found or already completed", 404),
-    );
+    return next(new AppError("appointment not found or already completed", 404));
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
     const [medicalReport] = await MedicalReportModel.create(
-      [
-        {
-          patient: appointment.patient, // ← from appointment
-          doctor: doctorId,
-          appointment: appointment._id,
-          diagnosis, // ← from body
-          notes,
-        },
-      ],
+      [{ patient: appointment.patient, doctor: doctorId, appointment: appointment._id, diagnosis, notes }],
       { session },
     );
 
     const [prescription] = await PrescriptionModel.create(
-      [
-        {
-          patient: appointment.patient, // ← from appointment
-          doctor: doctorId,
-          appointment: appointment._id,
-          medicines,
-        },
-      ],
+      [{ patient: appointment.patient, doctor: doctorId, appointment: appointment._id, medicines }],
       { session },
     );
 
@@ -717,58 +493,51 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
     const actions = [
       { user: req.user._id, action: ACTIONS.COMPLETE_APPOINTMENT },
       { user: req.user._id, action: ACTIONS.CREATE_PRESCRIPTION },
-      { user: req.user._id, action: ACTIONS.CREATE_MEDICAL_REPORT },
+      { user: req.user._id, action: ACTIONS.CREATE_MEDICAL_REPORT }
     ];
 
     await Activity.insertMany(actions);
 
     res.status(201).json({
       status: "success",
-      data: {
-        appointment,
-        medicalReport,
-        prescription,
-      },
+      data: { appointment, medicalReport, prescription },
     });
+
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
     return next(err);
   }
 });
+
+// ─── 10. GET APPOINTMENTS COUNT ───────────────────────────────────────────────
 export const getAppointmentsCount = catchAsync(async (req, res, next) => {
   const { id } = req.params;
+
   if (!mongoose.Types.ObjectId.isValid(id))
-    return next(new AppError("Invalid id", 400));
-  const user = await User.findById({ _id: id });
-  if (!user) return next(new AppError("user not found", 400));
-  let matchObject =
-    user.role === "patient"
-      ? { $match: { patient: new mongoose.Types.ObjectId(id) } }
-      : { $match: { doctor: new mongoose.Types.ObjectId(id) } };
-  console.log(user.role,matchObject);
+    return next(new AppError("invalid id", 400));
+
+  const user = await User.findById(id);
+  if (!user) return next(new AppError("user not found", 404));
+
+  const matchField = user.role === "patient" ? "patient" : "doctor";
+
   const stats = await Appointment.aggregate([
-    matchObject,
-    {
-      $group: {
-        _id: "$status",
-        count: { $sum: 1 },
-      },
-    },
+    { $match: { [matchField]: new mongoose.Types.ObjectId(id) } },
+    { $group: { _id: "$status", count: { $sum: 1 } } },
   ]);
 
   const result = {
-    totalAppointments: 0,
+    totalAppointments:     0,
     completedAppointments: 0,
     cancelledAppointments: 0,
-    pendingAppointments: 0,
+    pendingAppointments:   0,
   };
 
   stats.forEach((item) => {
-    if (item._id === "مكتمل") result.completedAppointments = item.count;
-    if (item._id === "ملغى") result.cancelledAppointments = item.count;
-    if (item._id === "قيد الانتظار") result.pendingAppointments = item.count;
-
+    if (item._id === "مكتمل")        result.completedAppointments = item.count;
+    if (item._id === "ملغى")         result.cancelledAppointments = item.count;
+    if (item._id === "قيد الانتظار") result.pendingAppointments   = item.count;
     result.totalAppointments += item.count;
   });
 

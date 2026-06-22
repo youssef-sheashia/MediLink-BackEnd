@@ -17,7 +17,7 @@ doctorRouter.get("/", getAllDoctors);
 doctorRouter.get(
   "/:id/available-slots",
   authenticate,
-  restrictTo("patient", "receptionist"),
+  restrictTo("patient", "receptionist" , "doctor"),
   getAvailableSlots,
 );
 doctorRouter.get("/:id", getDoctor);
