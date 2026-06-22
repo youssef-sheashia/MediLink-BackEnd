@@ -18,7 +18,7 @@ import {
   getCurrentPatientForDoctor,
   changeAppointmentStatus,
   completeAppointment,
-  getAppointmentsCountForPatient
+  getAppointmentsCount
 } from "../controllers/appointmentController.js";
 import { uploadMedicalFilesMiddleware } from "../middlewares/multer.js";
 import { uploadMultipleToImageKit } from "../utils/imageKit.js";
@@ -39,7 +39,7 @@ router.post(
 
   bookAppointmentByPatient,
 );
-router.get("/getAppointmentsCountForPatient/:patientID",restrictTo("admin"),getAppointmentsCountForPatient);
+router.get("/getAppointmentsCount/:id",restrictTo("admin"),getAppointmentsCount);
 router.post(
   "/bookByReceptionist",
   restrictTo("receptionist"),

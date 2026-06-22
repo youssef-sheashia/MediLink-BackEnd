@@ -736,17 +736,17 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
     return next(err);
   }
 });
-export const getAppointmentsCountForPatient = catchAsync(
+export const getAppointmentsCount = catchAsync(
   async (req, res, next) => {
-    const { patientID } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(patientID))
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
       return next(new AppError("Invalid id", 400));
-    const patient = await User.find({ _id: patientID });
-    if (!patient) return next(new AppError("patient not found", 400));
+    const user = await User.find({ _id: id });
+    if (!user) return next(new AppError("user not found", 400));
     
     const stats = await Appointment.aggregate([
       {
-        $match: { patient: new mongoose.Types.ObjectId(patientID) },
+        $match: { patient: new mongoose.Types.ObjectId(id) },
       },
       {
         $group: {
