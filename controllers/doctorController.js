@@ -77,7 +77,7 @@ export const createDoctor = catchAsync(async (req, res, next) => {
   } = req.body;
 
   if (
-    new Date().getFullYear() - new Date(birthDate).getFullYear() - 27 <=
+    new Date().getFullYear() - new Date(birthDate).getFullYear() - 27 <
     +experienceYears
   )
     return next(
