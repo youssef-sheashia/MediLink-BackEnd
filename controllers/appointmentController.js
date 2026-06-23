@@ -556,7 +556,7 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
   const appointment = await Appointment.findOne({
     _id: appointmentId,
     doctor: doctorId,
-    status: "قيد الانتظار",
+    status: "مؤكد",
   });
 
   if (!appointment)
