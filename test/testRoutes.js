@@ -478,7 +478,7 @@ async function testAppointments() {
     today.setHours(12, 0, 0, 0);
     await Appointment.findByIdAndUpdate(state.appointmentId, {
       date: today,
-      status: "قيد الانتظار",
+      status: "مؤكد",
     });
 
     const res = await request
@@ -490,7 +490,7 @@ async function testAppointments() {
     );
     assert(res.body.data?.appointment, "No appointment returned");
     assert(
-      String(res.body.data.appointment.patient) === String(state.patientUserId),
+      String(res.body.data.appointment.patient._id) === String(state.patientUserId),
       "Appointment patient does not match",
     );
   });

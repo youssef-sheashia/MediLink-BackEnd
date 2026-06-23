@@ -39,6 +39,7 @@ const userSchema = new Mongoose.Schema({
   },
   photo: {
     type: String,
+    default: "",
   },
   role: {
     type: String,
