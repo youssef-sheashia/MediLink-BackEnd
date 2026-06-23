@@ -8,7 +8,7 @@ import {
 
 const activitiesRouter = express.Router();
 
-activitiesRouter.use(authenticate, restrictTo("admin", "receptionist"));
+activitiesRouter.use(authenticate, restrictTo("admin", "receptionist","doctor"));
 activitiesRouter.get("/", getAllActivities);
 activitiesRouter.get("/:id", getActivitiesByUser);
 export default activitiesRouter;
