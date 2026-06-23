@@ -96,17 +96,7 @@ export const bookAppointmentSchema = z.object({
     .string({ required_error: "date is required" })
     .refine((val) => !isNaN(Date.parse(val)), {
       message: "invalid date format, use YYYY-MM-DD",
-    })
-    .refine(
-      (val) => {
-        const todayStr = new Date().toISOString().split("T"); // e.g., "2026-06-23"
-        
-        return val >= todayStr;
-      },
-      {
-        message: "date cannot be in the past",
-      },
-    ),
+    }),
 
 slotTime: z
   .string({ required_error: "slot time is required" })
@@ -129,17 +119,7 @@ export const bookAppointmentSchemaByRecption = z
     .string({ required_error: "date is required" })
     .refine((val) => !isNaN(Date.parse(val)), {
       message: "invalid date format, use YYYY-MM-DD",
-    })
-    .refine(
-      (val) => {
-        const todayStr = new Date().toISOString().split("T"); 
-        
-        return val >= todayStr;
-      },
-      {
-        message: "date cannot be in the past",
-      },
-    ),
+    }),
 
   slotTime: z
     .string({ required_error: "slot time is required" })
