@@ -75,7 +75,9 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   const limit = Number(req.query.limit) || 10;
 
   const patients = await Appointment.aggregate([
-    { $match: { doctor: new mongoose.Types.ObjectId(doctorId) } },
+    {
+      $match: { doctor: new mongoose.Types.ObjectId(doctorId), status: "مؤكد" },
+    },
     { $group: { _id: "$patient", visitCount: { $sum: 1 } } },
     {
       $lookup: {
@@ -444,7 +446,7 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
         doctor: new mongoose.Types.ObjectId(doctorId),
         patient: new mongoose.Types.ObjectId(patientId),
         date: { $gte: todayStart, $lte: todayEnd },
-        status: "قيد الانتظار",
+        status: "مؤكد",
       },
     },
     {
@@ -513,7 +515,7 @@ export const changeAppointmentStatus = catchAsync(async (req, res, next) => {
 
   const { changeTo } = req.body;
 
-  if (!["قيد الانتظار", "مكتمل", "ملغى","مؤكد"].includes(changeTo))
+  if (!["قيد الانتظار", "مكتمل", "ملغى", "مؤكد"].includes(changeTo))
     return next(new AppError("invalid status value", 400));
 
   if (appointment.status === "ملغى")
