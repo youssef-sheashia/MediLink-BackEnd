@@ -20,7 +20,8 @@ import {
   completeAppointment,
   getAppointmentsCount,
   getDoctorQueueByDoctor,
-  getDoctorQueueByRecepionist
+  getDoctorQueueByRecepionist,
+  cancelAppointment
 } from "../controllers/appointmentController.js";
 import { uploadMedicalFilesMiddleware } from "../middlewares/multer.js";
 import { uploadMultipleToImageKit } from "../utils/imageKit.js";

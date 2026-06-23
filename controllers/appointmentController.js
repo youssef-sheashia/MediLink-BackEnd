@@ -654,7 +654,6 @@ export const getAppointmentsCount = catchAsync(async (req, res, next) => {
   });
 });
 
-<<<<<<< HEAD
 export const getDoctorQueueByDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
   const queue = await getQueue(doctorId,"مؤكد");
@@ -725,7 +724,6 @@ const getQueue = catchAsync (async (doctorId,statusValue)=>{
   ]);
   return queue;
 })
-=======
 export const cancelAppointment = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
@@ -788,4 +786,3 @@ export const cancelAppointment = catchAsync(async (req, res, next) => {
     session.endSession();
   }
 });
->>>>>>> ec5a3c9126ea295a63113ab1b7113831baf348f6
