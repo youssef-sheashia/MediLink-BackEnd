@@ -74,9 +74,9 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 10;
 
-  const patients = await Appointment.aggregate([
+  const pipeline = [
     {
-      $match: { doctor: new mongoose.Types.ObjectId(doctorId), status: "مؤكد" },
+      $match: { doctor: new mongoose.Types.ObjectId(doctorId) },
     },
     { $group: { _id: "$patient", visitCount: { $sum: 1 } } },
     {
@@ -88,18 +88,6 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
       },
     },
     { $unwind: "$patient" },
-    ...(search
-      ? [
-          {
-            $match: {
-              $or: [
-                { "patient.firstName": { $regex: search, $options: "i" } },
-                { "patient.lastName": { $regex: search, $options: "i" } },
-              ],
-            },
-          },
-        ]
-      : []),
     {
       $project: {
         _id: 0,
@@ -112,7 +100,20 @@ export const getPatientForDoctor = catchAsync(async (req, res, next) => {
     },
     { $skip: (page - 1) * limit },
     { $limit: limit },
-  ]);
+  ];
+
+  if (search) {
+    pipeline.splice(4, 0, {
+      $match: {
+        $or: [
+          { "patient.firstName": { $regex: search, $options: "i" } },
+          { "patient.lastName": { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  const patients = await Appointment.aggregate(pipeline);
 
   res.status(200).json({
     status: "success",
