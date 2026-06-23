@@ -21,7 +21,7 @@ import {
   getAppointmentsCount,
   getDoctorQueueByDoctor,
   getDoctorQueueByRecepionist,
-  cancelAppointment
+  cancelAppointment,
 } from "../controllers/appointmentController.js";
 import { uploadMedicalFilesMiddleware } from "../middlewares/multer.js";
 import { uploadMultipleToImageKit } from "../utils/imageKit.js";
@@ -61,8 +61,16 @@ router.get(
   getMyAppointments,
 );
 router.get("/getPatientsForDoctor", restrictTo("doctor"), getPatientForDoctor);
-router.get("/getDoctorQueueByDoctor",restrictTo("doctor"),getDoctorQueueByDoctor);
-router.get("/getDoctorQueueByRecepionist",restrictTo("receptionist"),getDoctorQueueByRecepionist);
+router.get(
+  "/getDoctorQueueByDoctor",
+  restrictTo("doctor"),
+  getDoctorQueueByDoctor,
+);
+router.get(
+  "/getDoctorQueueByRecepionist",
+  restrictTo("receptionist"),
+  getDoctorQueueByRecepionist,
+);
 // for patient get all booked appoinments
 
 router.get(

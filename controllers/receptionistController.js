@@ -67,7 +67,10 @@ export const createReceptionist = catchAsync(async (req, res, next) => {
     session.endSession();
 
     user.password = undefined;
-    await Activity.create({user:user._id,action: ACTIONS.CREATE_RECEPTIONIST});
+    await Activity.create({
+      user: user._id,
+      action: ACTIONS.CREATE_RECEPTIONIST,
+    });
     res.status(201).json({
       status: "success",
       data: { user, profile },
@@ -86,7 +89,10 @@ export const getAllReceptionist = catchAsync(async (req, res, next) => {
   flattenAndRespond(res, { key: "receptionists", data: receptionists });
 });
 export const getReceptionist = catchAsync(async (req, res, next) => {
-  const receptionist = await Receptionist.findById(req.params.id);
+  const receptionist = await Receptionist.findById(req.params.id).populate({
+    path: "user",
+    select: "_id -password",
+  });
 
   if (!receptionist) return next(new AppError("receptionist not found", 404));
 
@@ -112,7 +118,7 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
     "birthDate",
     "photo",
     "active",
-    "notes"
+    "notes",
   ];
   const receptionistFields = [
     "education",
@@ -143,7 +149,10 @@ export const updateReceptionist = catchAsync(async (req, res, next) => {
   }
 
   const updatedReceptionist = await Receptionist.findById(id).populate("user");
-      await Activity.create({user:req.user._id,action: ACTIONS.UPDATE_RECEPTIONIST_PROFILE});
+  await Activity.create({
+    user: req.user._id,
+    action: ACTIONS.UPDATE_RECEPTIONIST_PROFILE,
+  });
 
   res.status(200).json({
     status: "success",
@@ -184,7 +193,10 @@ export const deleteReceptionist = catchAsync(async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
-    await Activity.create({user:req.user._id,action: ACTIONS.MAKE_RECEPTIONIST_UNACTIVE});
+    await Activity.create({
+      user: req.user._id,
+      action: ACTIONS.MAKE_RECEPTIONIST_UNACTIVE,
+    });
 
     res.status(204).json({
       status: "success",

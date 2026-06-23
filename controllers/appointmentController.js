@@ -443,8 +443,8 @@ export const getCurrentPatientForDoctor = catchAsync(async (req, res, next) => {
       $match: {
         doctor: new mongoose.Types.ObjectId(doctorId),
         patient: new mongoose.Types.ObjectId(patientId),
-        date:    { $gte: todayStart, $lte: todayEnd },
-        status:  "مؤكد",
+        date: { $gte: todayStart, $lte: todayEnd },
+        status: "قيد الانتظار",
       },
     },
     {
@@ -556,7 +556,7 @@ export const completeAppointment = catchAsync(async (req, res, next) => {
   const appointment = await Appointment.findOne({
     _id: appointmentId,
     doctor: doctorId,
-    status: "قيد الانتظار",
+    status: "مؤكد",
   });
 
   if (!appointment)
@@ -656,7 +656,7 @@ export const getAppointmentsCount = catchAsync(async (req, res, next) => {
 
 export const getDoctorQueueByDoctor = catchAsync(async (req, res, next) => {
   const doctorId = req.user._id;
-  const queue = await getQueue(doctorId,"مؤكد");
+  const queue = await getQueue(doctorId, "مؤكد");
   res.status(200).json({
     status: "success",
     length: queue.length,
@@ -664,30 +664,35 @@ export const getDoctorQueueByDoctor = catchAsync(async (req, res, next) => {
   });
 });
 
-export const getDoctorQueueByRecepionist = catchAsync(async (req, res, next)=>{
-  const {doctorId} = req.body;
-  if(!mongoose.Types.ObjectId.isValid(doctorId)) return next(new AppError("Invalid id",400));
-  const doctor = await User.findById(doctorId);
-  if(!doctor) return next(new AppError("Doctor not found",404));
+export const getDoctorQueueByRecepionist = catchAsync(
+  async (req, res, next) => {
+    const { doctorId } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(doctorId))
+      return next(new AppError("Invalid id", 400));
+    const doctor = await User.findById(doctorId);
+    if (!doctor) return next(new AppError("Doctor not found", 404));
 
-  const queue = await getQueue(doctorId,"قيد الانتظار");
-  console.log(queue);
-  res.status(200).json({
-    status: "success",
-    length: queue.length,
-    data: { queue },
-  });
-})
+    const queue = await getQueue(doctorId, "قيد الانتظار");
+    console.log(queue);
+    res.status(200).json({
+      status: "success",
+      length: queue.length,
+      data: { queue },
+    });
+  },
+);
 
-const getQueue = async (doctorId,statusValue)=>{
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayEnd   = new Date(); todayEnd.setHours(23, 59, 59, 999);
+const getQueue = async (doctorId, statusValue) => {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
 
   const queue = await Appointment.aggregate([
     {
       $match: {
         doctor: new mongoose.Types.ObjectId(doctorId),
-        date:   { $gte: todayStart, $lte: todayEnd },
+        date: { $gte: todayStart, $lte: todayEnd },
         status: statusValue,
       },
     },
@@ -724,7 +729,7 @@ const getQueue = async (doctorId,statusValue)=>{
     },
   ]);
   return queue;
-}
+};
 export const cancelAppointment = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
