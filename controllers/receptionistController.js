@@ -89,7 +89,7 @@ export const getAllReceptionist = catchAsync(async (req, res, next) => {
   flattenAndRespond(res, { key: "receptionists", data: receptionists });
 });
 export const getReceptionist = catchAsync(async (req, res, next) => {
-  const receptionist = await Receptionist.findById({
+  const receptionist = await Receptionist.findOne({
     user: req.params.id,
   }).populate({
     path: "user",
